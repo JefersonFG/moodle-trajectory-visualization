@@ -2,6 +2,8 @@
 <html lang="pt-br">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
     <title>Moodle trajectory visualizer</title>
 </head>
@@ -10,23 +12,25 @@
 
 <h1>Moodle trajectory visualizer</h1>
 
+<h2>Selecione o arquivo com as notas do aluno para gerar a visualização da sua trajetória no curso:</h2>
+<input type="file" id="file-input" />
+
 <h2>Informações do aluno</h2>
-<pre id="student-metadata"><b>Nome do aluno:</b> -
-    <b>Nota final:</b> -
-    <b>Número de interações nos fóruns da disciplina:</b> -
-    <b>Número total de interações com o moodle:</b> -</pre>
+<p><span id="student-name-label"><b>Nome do aluno: </b></span><span id="student-name"></span></p>
+<p><span id="student-final-grade-label"><b>Nota final: </b></span><span id="student-final-grade"></span></p>
+<p><span id="student-num-forum-interactions-label"><b>Número de interações nos fóruns da disciplina: </b>
+    </span><span id="student-num-forum-interactions"></span></p>
+<p><span id="student-total-interactions-label"><b>Número total de interações com o moodle: </b>
+    </span><span id="student-total-interactions"></span></p>
 
-<p id="student-grades"><b>Notas do aluno:</b> -</p>
+<p id="student-grades-label"><b>Notas do aluno: </b></p><p id="student-grades">-</p>
 
-<p id="student-interactions"><b>Interações do aluno com o moodle:</b> -</p>
+<p id="student-interactions-label"><b>Interações do aluno com o moodle: </b></p><p id="student-interactions">-</p>
 
 <script src="trajectory-visualizer.js"></script>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="https://unpkg.com/d3-dag@0.8.1"></script>
 </body>
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta charset="UTF-8">
 
 </html>

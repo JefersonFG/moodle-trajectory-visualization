@@ -13,14 +13,14 @@ Last module of the moodle trajectory generator project, this module will take st
         ...
     },
     "interactions": [
-            {
-                "Hora": "01/01/2000 08:00",
-                "Contexto do Evento": "Curso exemplo",
-                "Componente": "Sistema",
-                "Nome do evento": "Curso visto"
-            },
-            ...
-		]
+        {
+            "Hora": "01/01/2000 08:00",
+            "Contexto do Evento": "Curso exemplo",
+            "Componente": "Sistema",
+            "Nome do evento": "Curso visto"
+        },
+        ...
+    ]
 }
 ```
 

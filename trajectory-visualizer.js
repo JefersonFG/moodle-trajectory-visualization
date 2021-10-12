@@ -54,7 +54,11 @@ function displayContents(contents) {
     element = document.getElementById('student-grades');
     element.textContent = '-';
     if (JSON_GRADES in contents) {
-        element.textContent = JSON.stringify(contents[JSON_GRADES]);
+        // element.textContent = JSON.stringify(contents[JSON_GRADES]);
+        element.textContent = "";
+        for (const [key, value] of Object.entries(contents[JSON_GRADES])) {
+            element.innerHTML = element.innerHTML + (`<p><b>${key}:</b> ${value}</p>`);
+        }
     }
     element = document.getElementById('student-interactions');
     element.textContent = '-';

@@ -22,8 +22,29 @@ function readSingleFile(filePath) {
 
 // Main entrypoint for processing user data once picked by the user on the UI
 function processStudentData(studentData) {
-    let jsonData = JSON.parse(studentData)
-    displayContents(jsonData)
+    let jsonData = JSON.parse(studentData);
+    updatedStudentData = prepareDataForDAG(jsonData);
+    displayContents(updatedStudentData);
+}
+
+// The d3-dag library expect source data to have ids on each node, with the parentId field defining the connections between nodes
+function prepareDataForDAG(studentData) {
+    updatedInteractions = []
+    current_id = 0;
+    Object.entries(studentData[JSON_INTERACTIONS]).forEach(([_, interaction]) => {
+        // Object.entries(value).forEach(([key, value]) => {
+        //     console.log(key + ": " + value);
+        // });
+        processedInteraction = {"id": current_id.toString(), ...interaction};
+        if (current_id > 0) {
+            parentId = current_id - 1
+            processedInteraction = {...processedInteraction, "parentIds": [parentId.toString()]};
+        }
+        updatedInteractions.push(processedInteraction);
+        current_id++;
+    });
+    studentData[JSON_INTERACTIONS] = updatedInteractions;
+    return studentData;
 }
 
 // Displays the contents of the json file on the UI
@@ -50,7 +71,7 @@ function displayContents(contents) {
         element.textContent = contents[JSON_NUM_TOTAL_INTERACTIONS];
     }
 
-    // Grades and interactions
+    // Grades
     element = document.getElementById('student-grades');
     element.textContent = '-';
     if (JSON_GRADES in contents) {
@@ -60,11 +81,103 @@ function displayContents(contents) {
             element.innerHTML = element.innerHTML + (`<p><b>${key}:</b> ${value}</p>`);
         }
     }
-    element = document.getElementById('student-interactions');
-    element.textContent = '-';
-    if (JSON_INTERACTIONS in contents) {
-        element.textContent = JSON.stringify(contents[JSON_INTERACTIONS]);
+
+    // Interactions
+
+    // Based on examples on:
+    // https://observablehq.com/@erikbrinkman/d3-dag-sugiyama
+    // https://observablehq.com/@erikbrinkman/d3-dag-topological
+
+    // Clean canvas first
+    element = document.getElementById('graph-canvas');
+    element.textContent = '';
+
+    // Draw graph of interactions
+    const dag = d3.dagStratify()(contents[JSON_INTERACTIONS]);
+    const nodeRadius = 20;
+    const layout = d3
+        .sugiyama() // base layout
+        .nodeSize((node) => [(node ? 3.6 : 0.25) * nodeRadius, 3 * nodeRadius]); // set node size instead of constraining to fit
+    const { width, height } = layout(dag);
+
+    // --------------------------------
+    // This code only handles rendering
+    // --------------------------------
+    const svgSelection = d3.select("svg");
+    svgSelection.attr("viewBox", [0, 0, height, width].join(" "));
+    const defs = svgSelection.append("defs"); // For gradients
+
+    const steps = dag.size();
+    const interp = d3.interpolateRainbow;
+    const colorMap = new Map();
+    for (const [i, node] of dag.idescendants().entries()) {
+        colorMap.set(node.data.id, interp(i / steps));
     }
+
+    // How to draw edges
+    const line = d3
+        .line()
+        .curve(d3.curveMonotoneX)
+        .x((d) => d.y)
+        .y((d) => d.x);
+
+    // Plot edges
+    svgSelection
+        .append("g")
+        .selectAll("path")
+        .data(dag.links())
+        .enter()
+        .append("path")
+        .attr("d", ({ points }) => line(points))
+        .attr("fill", "none")
+        .attr("stroke-width", 1)
+        .attr("stroke", ({ source, target }) => {
+        // encodeURIComponents for spaces, hope id doesn't have a `--` in it
+        const gradId = encodeURIComponent(`${source.data.id}--${target.data.id}`);
+        const grad = defs
+            .append("linearGradient")
+            .attr("id", gradId)
+            .attr("gradientUnits", "userSpaceOnUse")
+            .attr("x1", source.y)
+            .attr("x2", target.y)
+            .attr("y1", source.x)
+            .attr("y2", target.x);
+        grad
+            .append("stop")
+            .attr("offset", "0%")
+            .attr("stop-color", colorMap.get(source.data.id));
+        grad
+            .append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", colorMap.get(target.data.id));
+        return `url(#${gradId})`;
+        });
+
+    // Select nodes
+    const nodes = svgSelection
+        .append("g")
+        .selectAll("g")
+        .data(dag.descendants())
+        .enter()
+        .append("g")
+        .attr("transform", ({ x, y }) => `translate(${y}, ${x})`);
+
+    // Plot node circles
+    nodes
+        .append("circle")
+        .attr("r", nodeRadius)
+        .attr("fill", (n) => colorMap.get(n.data.id));
+
+    // Add text to nodes
+    nodes
+        .append("text")
+        .text((d) => d.data.Componente)
+        .attr("font-size", "5")
+        .attr("font-weight", "bold")
+        .attr("font-family", "sans-serif")
+        .attr("text-anchor", "middle")
+        .attr("alignment-baseline", "middle")
+        .attr("fill", "white");
 }
 
 // Sets the event listener for the user picking the json file with the user data

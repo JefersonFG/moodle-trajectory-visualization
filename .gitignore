@@ -1,6 +1,8 @@
 # Project specific ignores
 
 development_datasets/
+.vscode/
+.DS_Store
 
 # Created by https://www.toptal.com/developers/gitignore/api/webstorm
 # Edit at https://www.toptal.com/developers/gitignore?templates=webstorm

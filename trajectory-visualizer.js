@@ -6,6 +6,9 @@ JSON_NUM_TOTAL_INTERACTIONS = "total_moodle_interactions"
 JSON_GRADES = "grades"
 JSON_INTERACTIONS = "interactions"
 
+TOOLTIP_HORIZONTAL_OFFSET = 50
+TOOLTIP_VERTICAL_OFFSET = -50
+
 // Reads the json file to load student data into memory and calls the function to process the data
 function readSingleFile(filePath) {
     const file = filePath.target.files[0];
@@ -28,14 +31,12 @@ function processStudentData(studentData) {
 }
 
 // The d3-dag library expect source data to have ids on each node, with the parentId field defining the connections between nodes
+// Also adds the label for printing, which is In, with n being the number of the event starting on one
 function prepareDataForDAG(studentData) {
     updatedInteractions = []
     current_id = 0;
     Object.entries(studentData[JSON_INTERACTIONS]).forEach(([_, interaction]) => {
-        // Object.entries(value).forEach(([key, value]) => {
-        //     console.log(key + ": " + value);
-        // });
-        processedInteraction = {"id": current_id.toString(), ...interaction};
+        processedInteraction = {"label": "I" + (current_id + 1).toString(), "id": current_id.toString(), ...interaction};
         if (current_id > 0) {
             parentId = current_id - 1
             processedInteraction = {...processedInteraction, "parentIds": [parentId.toString()]};
@@ -161,6 +162,25 @@ function displayContents(contents) {
         .enter()
         .append("g")
         .attr("transform", ({ x, y }) => `translate(${y}, ${x})`);
+    
+    // Show event details of each node on mouse hover
+    var div = d3.select("body").append("div")
+        .attr("class", "tooltip-node")
+        .style("opacity", 0);
+
+    nodes.on('mouseover', function(event, d) {
+        div.transition()
+            .duration(50)
+            .style("opacity", 1);
+        div.html(JSON.stringify(d.data))
+            .style("left", (element.getBoundingClientRect().left + d3.pointer(event)[0] + TOOLTIP_HORIZONTAL_OFFSET) + "px")
+            .style("top", (element.getBoundingClientRect().top + d3.pointer(event)[1] + TOOLTIP_VERTICAL_OFFSET) + "px");
+    })
+    .on('mouseout', function(_, _) {
+        div.transition()
+            .duration(50)
+            .style("opacity", 0);
+    });
 
     // Plot node circles
     nodes
@@ -171,8 +191,8 @@ function displayContents(contents) {
     // Add text to nodes
     nodes
         .append("text")
-        .text((d) => d.data.Componente)
-        .attr("font-size", "5")
+        .text((d) => d.data.label)
+        .attr("font-size", "10")
         .attr("font-weight", "bold")
         .attr("font-family", "sans-serif")
         .attr("text-anchor", "middle")

@@ -6,8 +6,14 @@ JSON_NUM_TOTAL_INTERACTIONS = "total_moodle_interactions"
 JSON_GRADES = "grades"
 JSON_INTERACTIONS = "interactions"
 
-TOOLTIP_HORIZONTAL_OFFSET = 50
-TOOLTIP_VERTICAL_OFFSET = -50
+JSON_INTERACTION_HOUR = "Hora"
+JSON_INTERACTION_EVENT_CONTEXT = "Contexto do Evento"
+JSON_INTERACTION_COMPONENT = "Componente"
+JSON_INTERACTION_EVENT_NAME = "Nome do evento"
+
+// Constants for UI values
+TOOLTIP_HORIZONTAL_OFFSET = 150
+TOOLTIP_VERTICAL_OFFSET = -150
 
 // Reads the json file to load student data into memory and calls the function to process the data
 function readSingleFile(filePath) {
@@ -172,7 +178,7 @@ function displayContents(contents) {
         div.transition()
             .duration(50)
             .style("opacity", 1);
-        div.html(JSON.stringify(d.data))
+        div.html(getTooltipText(d.data))
             .style("left", (element.getBoundingClientRect().left + d3.pointer(event)[0] + TOOLTIP_HORIZONTAL_OFFSET) + "px")
             .style("top", (element.getBoundingClientRect().top + d3.pointer(event)[1] + TOOLTIP_VERTICAL_OFFSET) + "px");
     })
@@ -198,6 +204,15 @@ function displayContents(contents) {
         .attr("text-anchor", "middle")
         .attr("alignment-baseline", "middle")
         .attr("fill", "white");
+}
+
+// Function to convert the node data to a presentable form for the tooltip
+function getTooltipText(nodeData) {
+    const hour = "<p><b>" + JSON_INTERACTION_HOUR + ":</b> " + nodeData[JSON_INTERACTION_HOUR] + "</p>";
+    const event_context = "<p><b>" + JSON_INTERACTION_EVENT_CONTEXT + ":</b> " + nodeData[JSON_INTERACTION_EVENT_CONTEXT] + "</p>";
+    const component = "<p><b>" + JSON_INTERACTION_COMPONENT + ":</b> " + nodeData[JSON_INTERACTION_COMPONENT] + "</p>";
+    const event_name = "<p><b>" + JSON_INTERACTION_EVENT_NAME + ":</b> " + nodeData[JSON_INTERACTION_EVENT_NAME] + "</p>";
+    return hour + event_context + component + event_name;
 }
 
 // Sets the event listener for the user picking the json file with the user data

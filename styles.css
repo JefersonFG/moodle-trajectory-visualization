@@ -15,12 +15,13 @@ svg {
 
 div.tooltip-node {
     position: absolute;
-    text-align: center;
-    padding: .5rem;
+    text-align: left;
+    padding: 5px;
     background: #FFFFFF;
     color: #313639;
     border: 1px solid #313639;
     border-radius: 8px;
     pointer-events: none;
-    font-size: 1.3rem;
+    font-size: 1rem;
+    width: auto;
 }

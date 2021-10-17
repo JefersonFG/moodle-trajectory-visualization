@@ -12,8 +12,8 @@ JSON_INTERACTION_COMPONENT = "Componente"
 JSON_INTERACTION_EVENT_NAME = "Nome do evento"
 
 // Constants for UI values
-TOOLTIP_HORIZONTAL_OFFSET = 150
-TOOLTIP_VERTICAL_OFFSET = -150
+TOOLTIP_HORIZONTAL_OFFSET = 50
+TOOLTIP_VERTICAL_OFFSET = -200
 
 // Reads the json file to load student data into memory and calls the function to process the data
 function readSingleFile(filePath) {
@@ -139,25 +139,25 @@ function displayContents(contents) {
         .attr("fill", "none")
         .attr("stroke-width", 1)
         .attr("stroke", ({ source, target }) => {
-        // encodeURIComponents for spaces, hope id doesn't have a `--` in it
-        const gradId = encodeURIComponent(`${source.data.id}--${target.data.id}`);
-        const grad = defs
-            .append("linearGradient")
-            .attr("id", gradId)
-            .attr("gradientUnits", "userSpaceOnUse")
-            .attr("x1", source.y)
-            .attr("x2", target.y)
-            .attr("y1", source.x)
-            .attr("y2", target.x);
-        grad
-            .append("stop")
-            .attr("offset", "0%")
-            .attr("stop-color", colorMap.get(source.data.id));
-        grad
-            .append("stop")
-            .attr("offset", "100%")
-            .attr("stop-color", colorMap.get(target.data.id));
-        return `url(#${gradId})`;
+            // encodeURIComponents for spaces, hope id doesn't have a `--` in it
+            const gradId = encodeURIComponent(`${source.data.id}--${target.data.id}`);
+            const grad = defs
+                .append("linearGradient")
+                .attr("id", gradId)
+                .attr("gradientUnits", "userSpaceOnUse")
+                .attr("x1", source.y)
+                .attr("x2", target.y)
+                .attr("y1", source.x)
+                .attr("y2", target.x);
+            grad
+                .append("stop")
+                .attr("offset", "0%")
+                .attr("stop-color", colorMap.get(source.data.id));
+            grad
+                .append("stop")
+                .attr("offset", "100%")
+                .attr("stop-color", colorMap.get(target.data.id));
+            return `url(#${gradId})`;
         });
 
     // Select nodes
@@ -173,14 +173,16 @@ function displayContents(contents) {
     var div = d3.select("body").append("div")
         .attr("class", "tooltip-node")
         .style("opacity", 0);
+    
+    const scrollableDiv = document.getElementById('scrollable-div');
 
-    nodes.on('mouseover', function(event, d) {
+    nodes.on('mouseover', function(e, d) {
         div.transition()
             .duration(50)
             .style("opacity", 1);
         div.html(getTooltipText(d.data))
-            .style("left", (element.getBoundingClientRect().left + d3.pointer(event)[0] + TOOLTIP_HORIZONTAL_OFFSET) + "px")
-            .style("top", (element.getBoundingClientRect().top + d3.pointer(event)[1] + TOOLTIP_VERTICAL_OFFSET) + "px");
+            .style("left", (scrollableDiv.offsetLeft + d3.pointer(e, scrollableDiv)[0] + TOOLTIP_HORIZONTAL_OFFSET) + "px")
+            .style("top", (scrollableDiv.offsetTop + d3.pointer(e, scrollableDiv)[1] + TOOLTIP_VERTICAL_OFFSET) + "px");
     })
     .on('mouseout', function(_, _) {
         div.transition()

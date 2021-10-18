@@ -192,8 +192,18 @@ function displayContents(contents) {
 
     // Plot node circles
     nodes
+        .filter((d) => d.data[JSON_INTERACTION_COMPONENT] != 'Sistema')
         .append("circle")
         .attr("r", nodeRadius)
+        .attr("fill", (n) => colorMap.get(n.data.id));
+    
+    nodes
+        .filter((d) => d.data[JSON_INTERACTION_COMPONENT] == 'Sistema')
+        .append("rect")
+        .attr("x", -nodeRadius)
+        .attr("y", -nodeRadius)
+        .attr("width", nodeRadius * 2)
+        .attr("height", nodeRadius * 2)
         .attr("fill", (n) => colorMap.get(n.data.id));
 
     // Add text to nodes

@@ -149,18 +149,10 @@ function displayContents(contents) {
     const { width, height } = layout(dag);
 
     // --------------------------------
-    // This code only handles rendering
+    // Rendering
     // --------------------------------
     const svgSelection = d3.select("svg");
     svgSelection.attr("viewBox", [0, 0, height, width].join(" "));
-    const defs = svgSelection.append("defs"); // For gradients
-
-    const steps = dag.size();
-    const interp = d3.interpolateRainbow;
-    const colorMap = new Map();
-    for (const [i, node] of dag.idescendants().entries()) {
-        colorMap.set(node.data.id, interp(i / steps));
-    }
 
     // How to draw edges
     const line = d3
@@ -179,27 +171,7 @@ function displayContents(contents) {
         .attr("d", ({ points }) => line(points))
         .attr("fill", "none")
         .attr("stroke-width", 1)
-        .attr("stroke", ({ source, target }) => {
-            // encodeURIComponents for spaces, hope id doesn't have a `--` in it
-            const gradId = encodeURIComponent(`${source.data.id}--${target.data.id}`);
-            const grad = defs
-                .append("linearGradient")
-                .attr("id", gradId)
-                .attr("gradientUnits", "userSpaceOnUse")
-                .attr("x1", source.y)
-                .attr("x2", target.y)
-                .attr("y1", source.x)
-                .attr("y2", target.x);
-            grad
-                .append("stop")
-                .attr("offset", "0%")
-                .attr("stop-color", colorMap.get(source.data.id));
-            grad
-                .append("stop")
-                .attr("offset", "100%")
-                .attr("stop-color", colorMap.get(target.data.id));
-            return `url(#${gradId})`;
-        });
+        .attr("stroke", "black");
 
     // Select nodes
     const nodes = svgSelection
@@ -241,8 +213,7 @@ function displayContents(contents) {
         nodes
             .filter((d) => nodeCategory.eventList.includes(d.data[JSON_INTERACTION_COMPONENT]))
             .append('path')
-            .attr('d', pathData)
-            .attr("fill", (n) => colorMap.get(n.data.id));
+            .attr('d', pathData);
     }
     eventCategories.forEach(drawNodeShape);
 

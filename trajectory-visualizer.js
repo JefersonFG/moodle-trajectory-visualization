@@ -80,6 +80,10 @@ function processStudentData(studentData) {
 // The d3-dag library expect source data to have ids on each node, with the parentId field defining the connections between nodes
 // Also adds the label for printing, which is In, with n being the number of the event starting on one
 function prepareDataForDAG(studentData) {
+    // If the student didn't interact with moodle just return, no preparation to do
+    if (!(JSON_INTERACTIONS in studentData)) {
+        return studentData;
+    }
     updatedInteractions = []
     current_id = 0;
     Object.entries(studentData[JSON_INTERACTIONS]).forEach(([_, interaction]) => {
@@ -123,7 +127,6 @@ function displayContents(contents) {
     element = document.getElementById('student-grades');
     element.textContent = '-';
     if (JSON_GRADES in contents) {
-        // element.textContent = JSON.stringify(contents[JSON_GRADES]);
         element.textContent = "";
         for (const [key, value] of Object.entries(contents[JSON_GRADES])) {
             element.innerHTML = element.innerHTML + (`<p><b>${key}:</b> ${value}</p>`);
@@ -137,8 +140,12 @@ function displayContents(contents) {
     // https://observablehq.com/@erikbrinkman/d3-dag-topological
 
     // Clean canvas first
-    element = document.getElementById('graph-canvas');
-    element.textContent = '';
+    d3.selectAll("svg > *").remove();
+
+    // Checks if there are interactions to show, if not returns
+    if (!(JSON_INTERACTIONS in contents)) {
+        return;
+    }
 
     // Draw graph of interactions
     const dag = d3.dagStratify()(contents[JSON_INTERACTIONS]);

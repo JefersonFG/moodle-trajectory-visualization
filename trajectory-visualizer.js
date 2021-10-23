@@ -15,6 +15,17 @@ JSON_INTERACTION_EVENT_NAME = "Nome do evento"
 TOOLTIP_HORIZONTAL_OFFSET = 50
 TOOLTIP_VERTICAL_OFFSET = -200
 
+// Event categories for classification in the trajectory
+// The idea is that each category is represented differently to ease evaluation of the trajectory
+// The different representation could be a different shape or color
+const eventCategories = {
+    "Fórum": ["Fórum"],
+    "Tarefa": ["Tarefa", "Envio de arquivos", "Comentário sobre o envio", "Questionário", "Pasta"],
+    "Conteúdo": ["Arquivo", "URL", "Página"],
+    "Webconferência": ["Webconferência Mconf"],
+    "Outros": ["Relatório de usuário", "Relatório geral", "Sistema"]
+}
+
 // Reads the json file to load student data into memory and calls the function to process the data
 function readSingleFile(filePath) {
     const file = filePath.target.files[0];
@@ -190,21 +201,23 @@ function displayContents(contents) {
             .style("opacity", 0);
     });
 
-    // Plot node circles
-    nodes
-        .filter((d) => d.data[JSON_INTERACTION_COMPONENT] != 'Sistema')
-        .append("circle")
-        .attr("r", nodeRadius)
-        .attr("fill", (n) => colorMap.get(n.data.id));
-    
-    nodes
-        .filter((d) => d.data[JSON_INTERACTION_COMPONENT] == 'Sistema')
-        .append("rect")
-        .attr("x", -nodeRadius)
-        .attr("y", -nodeRadius)
-        .attr("width", nodeRadius * 2)
-        .attr("height", nodeRadius * 2)
-        .attr("fill", (n) => colorMap.get(n.data.id));
+    // Plot node shapes
+    // Number used to select a different shape for each category
+    let categoryNumber = 0;
+    for (const [_, eventList] of Object.entries(eventCategories)) {
+        // Method for generating the symbol to display for the node
+        var symbolGenerator = d3.symbol().type(d3.symbols[categoryNumber]).size(nodeRadius * 50);
+        var pathData = symbolGenerator();
+
+        // Filters for components present in the event list for each category
+        nodes
+            .filter((d) => eventList.includes(d.data[JSON_INTERACTION_COMPONENT]))
+            .append('path')
+            .attr('d', pathData)
+            .attr("fill", (n) => colorMap.get(n.data.id));
+
+        categoryNumber++;
+    }
 
     // Add text to nodes
     nodes

@@ -10,30 +10,30 @@
 
 <body>
 
-<h1>Moodle trajectory visualizer</h1>
+    <h1>Moodle trajectory visualizer</h1>
 
-<h2>Selecione o arquivo com as notas do aluno para gerar a visualização da sua trajetória no curso:</h2>
-<input type="file" id="file-input" />
+    <h2>Selecione o arquivo com as notas do aluno para gerar a visualização da sua trajetória no curso:</h2>
+    <input type="file" id="file-input" />
 
-<h2>Informações do aluno</h2>
-<p><span id="student-name-label"><b>Nome do aluno: </b></span><span id="student-name"></span></p>
-<p><span id="student-final-grade-label"><b>Nota final: </b></span><span id="student-final-grade"></span></p>
-<p><span id="student-num-forum-interactions-label"><b>Número de interações nos fóruns da disciplina: </b>
-    </span><span id="student-num-forum-interactions"></span></p>
-<p><span id="student-total-interactions-label"><b>Número total de interações com o moodle: </b>
-    </span><span id="student-total-interactions"></span></p>
+    <h2>Informações do aluno</h2>
+    <p><span id="student-name-label"><b>Nome do aluno: </b></span><span id="student-name"></span></p>
+    <p><span id="student-final-grade-label"><b>Nota final: </b></span><span id="student-final-grade"></span></p>
+    <p><span id="student-num-forum-interactions-label"><b>Número de interações nos fóruns da disciplina: </b>
+        </span><span id="student-num-forum-interactions"></span></p>
+    <p><span id="student-total-interactions-label"><b>Número total de interações com o moodle: </b>
+        </span><span id="student-total-interactions"></span></p>
 
-<h2 id="student-grades-label"><b>Notas do aluno</b></h2>
-<p id="student-grades">-</p>
+    <h2 id="student-grades-label"><b>Notas do aluno</b></h2>
+    <p id="student-grades">-</p>
 
-<h2 id="student-interactions-label"><b>Interações do aluno com o moodle</b></h2>
-<!-- Graph canvas as svg inside a scrollable div -->
-<div id="scrollable-div"><svg id="graph-canvas"></svg></div>
+    <h2 id="student-interactions-label"><b>Interações do aluno com o moodle</b></h2>
+    <!-- Graph canvas as svg inside a scrollable div -->
+    <div id="scrollable-div"><svg id="graph-canvas"></svg></div>
 
-<script src="trajectory-visualizer.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/d3-dag@0.8.1"></script>
 
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://unpkg.com/d3-dag@0.8.1"></script>
+    <script src="trajectory-visualizer.js"></script>
 </body>
 
 </html>

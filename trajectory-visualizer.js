@@ -18,13 +18,43 @@ TOOLTIP_VERTICAL_OFFSET = -200
 // Event categories for classification in the trajectory
 // The idea is that each category is represented differently to ease evaluation of the trajectory
 // The different representation could be a different shape or color
-const eventCategories = {
-    "Fórum": ["Fórum"],
-    "Tarefa": ["Tarefa", "Envio de arquivos", "Comentário sobre o envio", "Questionário", "Pasta"],
-    "Conteúdo": ["Arquivo", "URL", "Página"],
-    "Webconferência": ["Webconferência Mconf"],
-    "Outros": ["Relatório de usuário", "Relatório geral", "Sistema"]
-}
+const forumCategory = {
+    eventList: ["Fórum"],
+    shape: d3.symbolCircle,
+    size: 1500
+};
+
+const taskCategory = {
+    eventList: ["Tarefa", "Envio de arquivos", "Comentário sobre o envio", "Questionário", "Pasta"],
+    shape: d3.symbolSquare,
+    size: 1500
+};
+
+const contentCategory = {
+    eventList: ["Arquivo", "URL", "Página"],
+    shape: d3.symbolTriangle,
+    size: 1000
+};
+
+const videocallCategory = {
+    eventList: ["Webconferência Mconf"],
+    shape: d3.symbolStar,
+    size: 1000
+};
+
+const otherCategory = {
+    eventList: ["Relatório de usuário", "Relatório geral", "Sistema"],
+    shape: d3.symbolDiamond,
+    size: 1000
+};
+
+const eventCategories = [
+    forumCategory,
+    taskCategory,
+    contentCategory,
+    videocallCategory,
+    otherCategory
+];
 
 // Reads the json file to load student data into memory and calls the function to process the data
 function readSingleFile(filePath) {
@@ -202,22 +232,19 @@ function displayContents(contents) {
     });
 
     // Plot node shapes
-    // Number used to select a different shape for each category
-    let categoryNumber = 0;
-    for (const [_, eventList] of Object.entries(eventCategories)) {
+    function drawNodeShape(nodeCategory) {
         // Method for generating the symbol to display for the node
-        var symbolGenerator = d3.symbol().type(d3.symbols[categoryNumber]).size(nodeRadius * 50);
+        var symbolGenerator = d3.symbol().type(nodeCategory.shape).size(nodeCategory.size);
         var pathData = symbolGenerator();
 
         // Filters for components present in the event list for each category
         nodes
-            .filter((d) => eventList.includes(d.data[JSON_INTERACTION_COMPONENT]))
+            .filter((d) => nodeCategory.eventList.includes(d.data[JSON_INTERACTION_COMPONENT]))
             .append('path')
             .attr('d', pathData)
             .attr("fill", (n) => colorMap.get(n.data.id));
-
-        categoryNumber++;
     }
+    eventCategories.forEach(drawNodeShape);
 
     // Add text to nodes
     nodes

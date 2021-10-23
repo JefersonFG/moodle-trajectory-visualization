@@ -265,9 +265,9 @@ function getTooltipText(nodeData) {
 // Such as uploading an activity or posting on the forum
 function getNodeColor(node) {
     if (activeInteractionEvents.includes(node[JSON_INTERACTION_EVENT_NAME])) {
-        return "blue";
+        return "green";
     } else {
-        return "red";
+        return "purple";
     }
 }
 

@@ -56,6 +56,21 @@ const eventCategories = [
     otherCategory
 ];
 
+// Events indicating that the student has posted content to moodle, indicating more active interactions
+activeInteractionEvents = [
+    "Post criado",
+    "Post atualizado",
+    "Algum conteúdo foi publicado",
+    "Tarefa enviada",
+    "Comentário criado",
+    "Submissão criada",
+    "Um envio foi submetido",
+    "Um arquivo foi enviado",
+    "Tentativa do questionário iniciada",
+    "Tentativa do questionário entregue",
+    "O usuário salvou um envio"
+];
+
 // Reads the json file to load student data into memory and calls the function to process the data
 function readSingleFile(filePath) {
     const file = filePath.target.files[0];
@@ -220,7 +235,8 @@ function displayContents(contents) {
         nodes
             .filter((d) => nodeCategory.eventList.includes(d.data[JSON_INTERACTION_COMPONENT]))
             .append('path')
-            .attr('d', pathData);
+            .attr('d', pathData)
+            .attr('fill', (d) => getNodeColor(d.data));
     }
     eventCategories.forEach(drawNodeShape);
 
@@ -236,13 +252,23 @@ function displayContents(contents) {
         .attr("fill", "white");
 }
 
-// Function to convert the node data to a presentable form for the tooltip
+// Converts node data into a presentable form for the tooltip
 function getTooltipText(nodeData) {
     const hour = "<p><b>" + JSON_INTERACTION_HOUR + ":</b> " + nodeData[JSON_INTERACTION_HOUR] + "</p>";
     const event_context = "<p><b>" + JSON_INTERACTION_EVENT_CONTEXT + ":</b> " + nodeData[JSON_INTERACTION_EVENT_CONTEXT] + "</p>";
     const component = "<p><b>" + JSON_INTERACTION_COMPONENT + ":</b> " + nodeData[JSON_INTERACTION_COMPONENT] + "</p>";
     const event_name = "<p><b>" + JSON_INTERACTION_EVENT_NAME + ":</b> " + nodeData[JSON_INTERACTION_EVENT_NAME] + "</p>";
     return hour + event_context + component + event_name;
+}
+
+// Returns the color of the node according to if the event indicates that the student has added content to the platform
+// Such as uploading an activity or posting on the forum
+function getNodeColor(node) {
+    if (activeInteractionEvents.includes(node[JSON_INTERACTION_EVENT_NAME])) {
+        return "blue";
+    } else {
+        return "red";
+    }
 }
 
 // Sets the event listener for the user picking the json file with the user data

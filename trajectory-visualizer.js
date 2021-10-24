@@ -12,7 +12,7 @@ JSON_INTERACTION_COMPONENT = "Componente"
 JSON_INTERACTION_EVENT_NAME = "Nome do evento"
 
 // Constants for UI values
-TOOLTIP_HORIZONTAL_OFFSET = 50
+TOOLTIP_HORIZONTAL_OFFSET = -250
 TOOLTIP_VERTICAL_OFFSET = -200
 
 // Event categories for classification in the trajectory
@@ -223,16 +223,14 @@ function displayContents(contents) {
     var div = d3.select("body").append("div")
         .attr("class", "tooltip-node")
         .style("opacity", 0);
-    
-    const scrollableDiv = document.getElementById('scrollable-div');
 
     nodes.on('mouseover', function(e, d) {
         div.transition()
             .duration(50)
             .style("opacity", 1);
         div.html(getTooltipText(d.data))
-            .style("left", (scrollableDiv.offsetLeft + d3.pointer(e, scrollableDiv)[0] + TOOLTIP_HORIZONTAL_OFFSET) + "px")
-            .style("top", (scrollableDiv.offsetTop + d3.pointer(e, scrollableDiv)[1] + TOOLTIP_VERTICAL_OFFSET) + "px");
+            .style("left", getTooltipLeftPosition(e) + "px")
+            .style("top", getTooltipTopPosition(e) + "px");
     })
     .on('mouseout', function(_, _) {
         div.transition()
@@ -274,6 +272,18 @@ function getTooltipText(nodeData) {
     const component = "<p><b>" + JSON_INTERACTION_COMPONENT + ":</b> " + nodeData[JSON_INTERACTION_COMPONENT] + "</p>";
     const event_name = "<p><b>" + JSON_INTERACTION_EVENT_NAME + ":</b> " + nodeData[JSON_INTERACTION_EVENT_NAME] + "</p>";
     return hour + event_context + component + event_name;
+}
+
+// Left position of the tooltip, taking the current pointer position (based on event), parent div position and screen limits into account
+function getTooltipLeftPosition(e) {
+    const scrollableDiv = document.getElementById('scrollable-div');
+    return Math.max(scrollableDiv.offsetLeft + d3.pointer(e, scrollableDiv)[0] + TOOLTIP_HORIZONTAL_OFFSET, 0);
+}
+
+// Top position of the tooltip, taking the current pointer position (based on event), parent div position and screen limits into account
+function getTooltipTopPosition(e) {
+    const scrollableDiv = document.getElementById('scrollable-div');
+    return Math.max(scrollableDiv.offsetTop + d3.pointer(e, scrollableDiv)[1] + TOOLTIP_VERTICAL_OFFSET, 0);
 }
 
 // Returns the color of the node according to if the event indicates that the student has added content to the platform

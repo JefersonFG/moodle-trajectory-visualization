@@ -60,15 +60,14 @@ const eventCategories = [
 activeInteractionEvents = [
     "Post criado",
     "Post atualizado",
-    "Algum conteúdo foi publicado",
-    "Tarefa enviada",
+    "Algum conteúdo foi publicado.",
     "Comentário criado",
-    "Submissão criada",
-    "Um envio foi submetido",
-    "Um arquivo foi enviado",
+    "Submissão criada.",
+    "Um envio foi submetido.",
+    "Um arquivo foi enviado.",
     "Tentativa do questionário iniciada",
     "Tentativa do questionário entregue",
-    "O usuário salvou um envio"
+    "O usuário salvou um envio."
 ];
 
 // Reads the json file to load student data into memory and calls the function to process the data

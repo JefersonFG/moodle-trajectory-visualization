@@ -21,13 +21,13 @@ TOOLTIP_VERTICAL_OFFSET = -200
 const forumCategory = {
     eventList: ["Fórum"],
     shape: d3.symbolCircle,
-    size: 1500
+    size: 1750
 };
 
 const taskCategory = {
     eventList: ["Tarefa", "Envio de arquivos", "Comentário sobre o envio", "Questionário", "Pasta"],
     shape: d3.symbolSquare,
-    size: 1500
+    size: 1750
 };
 
 const contentCategory = {
@@ -140,10 +140,26 @@ function displayContents(contents) {
     // Grades
     element = document.getElementById('student-grades');
     element.textContent = '-';
+
+    // Saves a list of grades for the student, so nodes related to the grading activity can be identified
+    gradeList = {};
+    gradeCount = 0;
+
     if (JSON_GRADES in contents) {
         element.textContent = "";
-        for (const [key, value] of Object.entries(contents[JSON_GRADES])) {
-            element.innerHTML = element.innerHTML + (`<p><b>${key}:</b> ${value}</p>`);
+        for ([gradeTitle, gradeValue] of Object.entries(contents[JSON_GRADES])) {
+            // TODO: Move this to cleaning module
+            // Trim title
+            if (gradeTitle.endsWith("(Real)")) {
+                const index = gradeTitle.indexOf("(Real)");
+                gradeTitle = gradeTitle.substring(0, index);
+            }
+            // Remove unicode character U+00A0 c2 a0 NO-BREAK SPACE and replace with regular space
+            gradeTitle = gradeTitle.replace('\u00a0', ' ');
+            gradeTitle = gradeTitle.trim();
+            gradeList[gradeTitle] = `N${gradeCount}`;
+            element.innerHTML = element.innerHTML + (`<p><b>N${gradeCount} - ${gradeTitle}:</b> ${gradeValue}</p>`);
+            gradeCount++;
         }
     }
 
@@ -242,7 +258,7 @@ function displayContents(contents) {
     // Add text to nodes
     nodes
         .append("text")
-        .text((d) => d.data.label)
+        .text((d) => getNodeText(d.data, gradeList))
         .attr("font-size", "10")
         .attr("font-weight", "bold")
         .attr("font-family", "sans-serif")
@@ -268,6 +284,18 @@ function getNodeColor(node) {
     } else {
         return "purple";
     }
+}
+
+// Returns the appropriate text to display inside the node
+// Checks the grade list to see if the node is related to a grading activity and indicates on the text
+function getNodeText(node, gradeList) {
+    let nodeText = node.label;
+    const currentEventContext = node[JSON_INTERACTION_EVENT_CONTEXT];
+    if (currentEventContext in gradeList) {
+        console.log("Success");
+        nodeText = `${nodeText} - ${gradeList[currentEventContext]}`;
+    }
+    return nodeText;
 }
 
 // Sets the event listener for the user picking the json file with the user data

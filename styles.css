@@ -1,18 +1,22 @@
+/* Add margins to the page and clip content horizontally, to only scroll on the trajectory */
 body {
     margin: 25px;
     overflow-x: hidden;
 }
 
-div {
+/* Set trajectory view to scroll horizontally */
+.horizontally-scrollable-div {
     width: 100%;
     overflow-x: scroll;
     overflow-y: hidden;
 }
 
+/* Set height for trajectory viewing */
 svg {
     height: 200px;
 }
 
+/* Style the tooltip */
 div.tooltip-node {
     position: absolute;
     text-align: left;
@@ -24,4 +28,43 @@ div.tooltip-node {
     pointer-events: none;
     font-size: 1rem;
     width: auto;
+}
+
+/* Style the button that is used to open and close the collapsible content */
+.student-info-button {
+    background-color: #777;
+    color: white;
+    cursor: pointer;
+    padding: 18px;
+    width: 100%;
+    border: none;
+    text-align: left;
+    outline: none;
+    font-size: 15px;
+}
+
+/* Add a background color to the button if it is clicked on (add the .active class with JS), and when you move the mouse over it (hover) */
+.active, .student-info-button:hover {
+    background-color: #555;
+}
+
+/* Style the collapsible content. Note: hidden by default */
+.student-info-div {
+    padding: 0 18px;
+    overflow: hidden;
+    background-color: #f1f1f1;
+    transition: max-height 0.2s ease-out;
+    max-height: 0;
+}
+
+.student-info-button:after {
+    content: '\02795'; /* Unicode character for "plus" sign (+) */
+    font-weight: bold;
+    color: white;
+    float: right;
+    margin-left: 5px;
+}
+
+.active:after {
+    content: "\2796"; /* Unicode character for "minus" sign (-) */
 }

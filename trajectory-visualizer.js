@@ -276,14 +276,14 @@ function getTooltipText(nodeData) {
 
 // Left position of the tooltip, taking the current pointer position (based on event), parent div position and screen limits into account
 function getTooltipLeftPosition(e) {
-    const scrollableDiv = document.getElementById('scrollable-div');
-    return Math.max(scrollableDiv.offsetLeft + d3.pointer(e, scrollableDiv)[0] + TOOLTIP_HORIZONTAL_OFFSET, 0);
+    const trajectoryDiv = document.getElementById('trajectory-div');
+    return Math.max(trajectoryDiv.offsetLeft + d3.pointer(e, trajectoryDiv)[0] + TOOLTIP_HORIZONTAL_OFFSET, 0);
 }
 
 // Top position of the tooltip, taking the current pointer position (based on event), parent div position and screen limits into account
 function getTooltipTopPosition(e) {
-    const scrollableDiv = document.getElementById('scrollable-div');
-    return Math.max(scrollableDiv.offsetTop + d3.pointer(e, scrollableDiv)[1] + TOOLTIP_VERTICAL_OFFSET, 0);
+    const trajectoryDiv = document.getElementById('trajectory-div');
+    return Math.max(trajectoryDiv.offsetTop + d3.pointer(e, trajectoryDiv)[1] + TOOLTIP_VERTICAL_OFFSET, 0);
 }
 
 // Returns the color of the node according to if the event indicates that the student has added content to the platform
@@ -311,3 +311,19 @@ function getNodeText(node, gradeList) {
 // Sets the event listener for the user picking the json file with the user data
 document.getElementById('file-input')
     .addEventListener('change', readSingleFile, false);
+
+// Sets the event listener for the collabsible student info layout
+var coll = document.getElementsByClassName("student-info-button");
+var i;
+
+for (i = 0; i < coll.length; i++) {
+    coll[i].addEventListener("click", function() {
+        this.classList.toggle("active");
+        var content = this.nextElementSibling;
+        if (content.style.maxHeight){
+            content.style.maxHeight = null;
+        } else {
+            content.style.maxHeight = content.scrollHeight + "px";
+        }
+    });
+}

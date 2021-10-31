@@ -161,6 +161,7 @@ function displayContents(contents) {
 
     // Checks if there are interactions to show, if not returns
     if (!(JSON_INTERACTIONS in contents)) {
+        // TODO: Indicate that there are no interactions to show
         return;
     }
 
@@ -175,7 +176,7 @@ function displayContents(contents) {
     // --------------------------------
     // Rendering
     // --------------------------------
-    const svgSelection = d3.select("svg");
+    const svgSelection = d3.select("#graph-canvas");
     svgSelection.attr("viewBox", [0, 0, height, width].join(" "));
 
     // How to draw edges
@@ -211,13 +212,15 @@ function displayContents(contents) {
         .attr("class", "tooltip-node")
         .style("opacity", 0);
 
+    const trajectoryDiv = document.getElementById('trajectory-div');
+
     nodes.on('mouseover', function(e, d) {
         div.transition()
             .duration(50)
             .style("opacity", 1);
         div.html(getTooltipText(d.data))
-            .style("left", getTooltipLeftPosition(e) + "px")
-            .style("top", getTooltipTopPosition(e) + "px");
+            .style("left", getTooltipLeftPosition(e, trajectoryDiv) + "px")
+            .style("top", getTooltipTopPosition(e, trajectoryDiv) + "px");
     })
     .on('mouseout', function(_, _) {
         div.transition()
@@ -365,14 +368,12 @@ function getTooltipText(nodeData) {
 }
 
 // Left position of the tooltip, taking the current pointer position (based on event), parent div position and screen limits into account
-function getTooltipLeftPosition(e) {
-    const trajectoryDiv = document.getElementById('trajectory-div');
+function getTooltipLeftPosition(e, trajectoryDiv) {
     return Math.max(trajectoryDiv.offsetLeft + d3.pointer(e, trajectoryDiv)[0] + TOOLTIP_HORIZONTAL_OFFSET, 0);
 }
 
 // Top position of the tooltip, taking the current pointer position (based on event), parent div position and screen limits into account
-function getTooltipTopPosition(e) {
-    const trajectoryDiv = document.getElementById('trajectory-div');
+function getTooltipTopPosition(e, trajectoryDiv) {
     return Math.max(trajectoryDiv.offsetTop + d3.pointer(e, trajectoryDiv)[1] + TOOLTIP_VERTICAL_OFFSET, 0);
 }
 

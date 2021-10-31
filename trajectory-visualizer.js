@@ -116,52 +116,7 @@ function prepareDataForDAG(studentData) {
 // Displays the contents of the json file on the UI
 function displayContents(contents) {
     // Student metadata
-    let element = document.getElementById('student-name');
-    element.textContent = '-';
-    if (JSON_NAME in contents) {
-        element.textContent = contents[JSON_NAME];
-    }
-    element = document.getElementById('student-final-grade');
-    element.textContent = '-';
-    if (JSON_FINAL_GRADE in contents) {
-        element.textContent = contents[JSON_FINAL_GRADE];
-    }
-    element = document.getElementById('student-num-forum-interactions');
-    element.textContent = '-';
-    if (JSON_NUM_FORUM_INTERACTIONS in contents) {
-        element.textContent = contents[JSON_NUM_FORUM_INTERACTIONS];
-    }
-    element = document.getElementById('student-total-interactions');
-    element.textContent = '-';
-    if (JSON_NUM_TOTAL_INTERACTIONS in contents) {
-        element.textContent = contents[JSON_NUM_TOTAL_INTERACTIONS];
-    }
-
-    // Grades
-    element = document.getElementById('student-grades');
-    element.textContent = '-';
-
-    // Saves a list of grades for the student, so nodes related to the grading activity can be identified
-    gradeList = {};
-    gradeCount = 0;
-
-    if (JSON_GRADES in contents) {
-        element.textContent = "";
-        for ([gradeTitle, gradeValue] of Object.entries(contents[JSON_GRADES])) {
-            // TODO: Move this to cleaning module
-            // Trim title
-            if (gradeTitle.endsWith("(Real)")) {
-                const index = gradeTitle.indexOf("(Real)");
-                gradeTitle = gradeTitle.substring(0, index);
-            }
-            // Remove unicode character U+00A0 c2 a0 NO-BREAK SPACE and replace with regular space
-            gradeTitle = gradeTitle.replace('\u00a0', ' ');
-            gradeTitle = gradeTitle.trim();
-            gradeList[gradeTitle] = `N${gradeCount}`;
-            element.innerHTML = element.innerHTML + (`<p><b>N${gradeCount} - ${gradeTitle}:</b> ${gradeValue}</p>`);
-            gradeCount++;
-        }
-    }
+    displayStudentInfo(contents);
 
     // Interactions
 
@@ -265,6 +220,109 @@ function displayContents(contents) {
         .attr("fill", "white");
 }
 
+// Adds html elements for the student metadata and fill it with the given student data
+function displayStudentInfo(studentData) {
+    const studentInfoSectionDiv = document.getElementById('student-info-section-div');
+
+    // Add a button for the collapsible layout
+    const studentInfoButton = document.createElement('button');
+    studentInfoButton.classList.add('student-info-button');
+    // TODO: Identify the student
+    studentInfoButton.innerText = 'Abrir informações do aluno';
+    studentInfoSectionDiv.appendChild(studentInfoButton);
+
+    // Set the event handler
+    studentInfoButton.addEventListener("click", studentMetadataButtonEventHandler);
+
+    // Add the div encompassing the collapsible layout
+    const studentInfoDiv = document.createElement('div');
+    studentInfoDiv.classList.add('student-info-div');
+    studentInfoSectionDiv.appendChild(studentInfoDiv);
+
+    // Add the student data inside the div
+    const summaryHeader = document.createElement('h2');
+    summaryHeader.innerText = 'Resumo';
+    studentInfoDiv.appendChild(summaryHeader);
+
+    // Student name
+    const studentNameLabel = document.createElement('p');
+    studentName = '-';
+    if (JSON_NAME in studentData) {
+        studentName = studentData[JSON_NAME];
+    }
+    studentNameLabel.innerHTML = '<b>Nome do aluno:</b> ' + studentName;
+    studentInfoDiv.appendChild(studentNameLabel);
+
+    // Final grade
+    const studentFinalGradeLabel = document.createElement('p');
+    studentFinalGrade = '-';
+    if (JSON_FINAL_GRADE in studentData) {
+        studentFinalGrade = studentData[JSON_FINAL_GRADE];
+    }
+    studentFinalGradeLabel.innerHTML = '<b>Nota final:</b> ' + studentFinalGrade;
+    studentInfoDiv.appendChild(studentFinalGradeLabel);
+
+    // Number of forum interactions
+    const studentNumForumInteractionsLabel = document.createElement('p');
+    studentNumForumInteractions = '-';
+    if (JSON_NUM_FORUM_INTERACTIONS in studentData) {
+        NumForumInteractions = studentData[JSON_NUM_FORUM_INTERACTIONS];
+    }
+    studentNumForumInteractionsLabel.innerHTML = '<b>Número de interações nos fóruns da disciplina:</b> ' + NumForumInteractions;
+    studentInfoDiv.appendChild(studentNumForumInteractionsLabel);
+
+    // Total number of interactions with moodle
+    const studentTotalInteractionsLabel = document.createElement('p');
+    studentTotalInteractions = '-';
+    if (JSON_NUM_TOTAL_INTERACTIONS in studentData) {
+        studentTotalInteractions = studentData[JSON_NUM_TOTAL_INTERACTIONS];
+    }
+    studentTotalInteractionsLabel.innerHTML = '<b>Número total de interações com o moodle:</b> ' + studentTotalInteractions;
+    studentInfoDiv.appendChild(studentTotalInteractionsLabel);
+
+    // Show student grades
+    const gradesHeader = document.createElement('h2');
+    gradesHeader.innerText = 'Notas do aluno';
+    studentInfoDiv.appendChild(gradesHeader);
+
+    const studentGrades = document.createElement('p');
+    studentGrades.innerHTML = '-';
+
+    // Saves a list of grades for the student, so nodes related to the grading activity can be identified
+    gradeList = {};
+    gradeCount = 0;
+
+    if (JSON_GRADES in studentData) {
+        studentGrades.innerHTML = '';
+        for ([gradeTitle, gradeValue] of Object.entries(studentData[JSON_GRADES])) {
+            // TODO: Move this to cleaning module
+            // Trim title
+            if (gradeTitle.endsWith("(Real)")) {
+                const index = gradeTitle.indexOf("(Real)");
+                gradeTitle = gradeTitle.substring(0, index);
+            }
+            // Remove unicode character U+00A0 c2 a0 NO-BREAK SPACE and replace with regular space
+            gradeTitle = gradeTitle.replace('\u00a0', ' ');
+            gradeTitle = gradeTitle.trim();
+            gradeList[gradeTitle] = `N${gradeCount}`;
+            studentGrades.innerHTML = studentGrades.innerHTML + (`<p><b>N${gradeCount} - ${gradeTitle}:</b> ${gradeValue}</p>`);
+            gradeCount++;
+        }
+    }
+    studentInfoDiv.appendChild(studentGrades);
+}
+
+// Event handler for the student metadata button
+function studentMetadataButtonEventHandler() {
+    this.classList.toggle("active");
+    var content = this.nextElementSibling;
+    if (content.style.maxHeight){
+        content.style.maxHeight = null;
+    } else {
+        content.style.maxHeight = content.scrollHeight + "px";
+    }
+}
+
 // Converts node data into a presentable form for the tooltip
 function getTooltipText(nodeData) {
     const hour = "<p><b>" + JSON_INTERACTION_HOUR + ":</b> " + nodeData[JSON_INTERACTION_HOUR] + "</p>";
@@ -317,13 +375,5 @@ var coll = document.getElementsByClassName("student-info-button");
 var i;
 
 for (i = 0; i < coll.length; i++) {
-    coll[i].addEventListener("click", function() {
-        this.classList.toggle("active");
-        var content = this.nextElementSibling;
-        if (content.style.maxHeight){
-            content.style.maxHeight = null;
-        } else {
-            content.style.maxHeight = content.scrollHeight + "px";
-        }
-    });
+    coll[i].addEventListener("click", studentMetadataButtonEventHandler);
 }

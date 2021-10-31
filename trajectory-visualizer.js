@@ -161,7 +161,12 @@ function displayContents(contents) {
 
     // Checks if there are interactions to show, if not returns
     if (!(JSON_INTERACTIONS in contents)) {
-        // TODO: Indicate that there are no interactions to show
+        var txt = document.createElementNS("http://www.w3.org/2000/svg", 'text');
+        txt.setAttributeNS(null, 'x', 10);
+        txt.setAttributeNS(null, 'y', 50);
+        txt.setAttributeNS(null, 'font-size', 18);
+        txt.innerHTML = "Estudante não interagiu com o moodle";
+        document.getElementById("graph-canvas").appendChild(txt);
         return;
     }
 

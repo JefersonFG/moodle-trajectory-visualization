@@ -16,7 +16,7 @@ TOOLTIP_HORIZONTAL_OFFSET = -250;
 TOOLTIP_VERTICAL_OFFSET = -200;
 
 // Maximum number of students that the UI will show at the same time
-MAX_STUDENTS_VISIBLE = 5;
+MAX_STUDENTS_VISIBLE = 3;
 
 // Current number of students shown on the UI
 currentNumberOfVisibleStudents = 0;
@@ -94,7 +94,7 @@ function readSingleFile(filePath) {
 function processStudentData(studentData) {
     // Check first if the student limit has been reached
     if (currentNumberOfVisibleStudents >= MAX_STUDENTS_VISIBLE) {
-        // TODO: Proper inform the user that the limit has been reached
+        window.alert("Número máximo de estudantes exibidos simultâneamente atingido, atualize a página para exibir novas trajetórias");
         return;
     }
     let jsonData = JSON.parse(studentData);

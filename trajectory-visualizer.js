@@ -18,8 +18,8 @@ TOOLTIP_VERTICAL_OFFSET = -200;
 // Maximum number of students that the UI will show at the same time
 MAX_STUDENTS_VISIBLE = 3;
 
-// Current number of students shown on the UI
-currentNumberOfVisibleStudents = 0;
+// List of current shown students, to avoid duplicates on the UI and control number of simultaneous student trajectories being shown
+currentStudentsShown = [];
 
 // Event categories for classification in the trajectory
 // The idea is that each category is represented differently to ease evaluation of the trajectory
@@ -49,7 +49,7 @@ const videocallCategory = {
 };
 
 const otherCategory = {
-    eventList: ["Relatório de usuário", "Relatório geral", "Sistema"],
+    eventList: ["Relatório do usuário", "Relatório geral", "Sistema"],
     shape: d3.symbolDiamond,
     size: 1000
 };
@@ -92,16 +92,27 @@ function readSingleFile(filePath) {
 
 // Main entrypoint for processing user data once picked by the user on the UI
 function processStudentData(studentData) {
-    // Check first if the student limit has been reached
-    if (currentNumberOfVisibleStudents >= MAX_STUDENTS_VISIBLE) {
+    // Parse input file
+    let jsonData = JSON.parse(studentData);
+
+    // Check first if a new student has been selected
+    if (currentStudentsShown.includes(jsonData[JSON_NAME])) {
+        console.log(`Student ${jsonData[JSON_NAME]} already shown on the UI`);
+        return;
+    }
+
+    // Check if the student limit has been reached
+    if (currentStudentsShown.length >= MAX_STUDENTS_VISIBLE) {
         window.alert("Número máximo de estudantes exibidos simultâneamente atingido, atualize a página para exibir novas trajetórias");
         return;
     }
-    let jsonData = JSON.parse(studentData);
+
+    // Load student data and show on the UI
     updatedStudentData = prepareDataForDAG(jsonData);
     displayContents(updatedStudentData);
-    // TODO: Save student name in a list so it doesn't repeat on the UI
-    currentNumberOfVisibleStudents++;
+    
+    // Save student name on list of students shown on the UI
+    currentStudentsShown.push(jsonData[JSON_NAME]);
 }
 
 // The d3-dag library expect source data to have ids on each node, with the parentId field defining the connections between nodes

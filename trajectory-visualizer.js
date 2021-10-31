@@ -1,19 +1,25 @@
 // Constants for the json elements
-JSON_NAME = "name"
-JSON_FINAL_GRADE = "final_grade"
-JSON_NUM_FORUM_INTERACTIONS = "forum_interactions"
-JSON_NUM_TOTAL_INTERACTIONS = "total_moodle_interactions"
-JSON_GRADES = "grades"
-JSON_INTERACTIONS = "interactions"
+JSON_NAME = "name";
+JSON_FINAL_GRADE = "final_grade";
+JSON_NUM_FORUM_INTERACTIONS = "forum_interactions";
+JSON_NUM_TOTAL_INTERACTIONS = "total_moodle_interactions";
+JSON_GRADES = "grades";
+JSON_INTERACTIONS = "interactions";
 
-JSON_INTERACTION_HOUR = "Hora"
-JSON_INTERACTION_EVENT_CONTEXT = "Contexto do Evento"
-JSON_INTERACTION_COMPONENT = "Componente"
-JSON_INTERACTION_EVENT_NAME = "Nome do evento"
+JSON_INTERACTION_HOUR = "Hora";
+JSON_INTERACTION_EVENT_CONTEXT = "Contexto do Evento";
+JSON_INTERACTION_COMPONENT = "Componente";
+JSON_INTERACTION_EVENT_NAME = "Nome do evento";
 
 // Constants for UI values
-TOOLTIP_HORIZONTAL_OFFSET = -250
-TOOLTIP_VERTICAL_OFFSET = -200
+TOOLTIP_HORIZONTAL_OFFSET = -250;
+TOOLTIP_VERTICAL_OFFSET = -200;
+
+// Maximum number of students that the UI will show at the same time
+MAX_STUDENTS_VISIBLE = 5;
+
+// Current number of students shown on the UI
+currentNumberOfVisibleStudents = 0;
 
 // Event categories for classification in the trajectory
 // The idea is that each category is represented differently to ease evaluation of the trajectory
@@ -86,9 +92,16 @@ function readSingleFile(filePath) {
 
 // Main entrypoint for processing user data once picked by the user on the UI
 function processStudentData(studentData) {
+    // Check first if the student limit has been reached
+    if (currentNumberOfVisibleStudents >= MAX_STUDENTS_VISIBLE) {
+        // TODO: Proper inform the user that the limit has been reached
+        return;
+    }
     let jsonData = JSON.parse(studentData);
     updatedStudentData = prepareDataForDAG(jsonData);
     displayContents(updatedStudentData);
+    // TODO: Save student name in a list so it doesn't repeat on the UI
+    currentNumberOfVisibleStudents++;
 }
 
 // The d3-dag library expect source data to have ids on each node, with the parentId field defining the connections between nodes

@@ -151,113 +151,7 @@ function displayContents(contents) {
     displayStudentInfo(contents);
 
     // Interactions
-
-    // Based on examples on:
-    // https://observablehq.com/@erikbrinkman/d3-dag-sugiyama
-    // https://observablehq.com/@erikbrinkman/d3-dag-topological
-
-    // Clean canvas first
-    d3.selectAll("svg > *").remove();
-
-    // Checks if there are interactions to show, if not returns
-    if (!(JSON_INTERACTIONS in contents)) {
-        var txt = document.createElementNS("http://www.w3.org/2000/svg", 'text');
-        txt.setAttributeNS(null, 'x', 10);
-        txt.setAttributeNS(null, 'y', 50);
-        txt.setAttributeNS(null, 'font-size', 18);
-        txt.innerHTML = "Estudante não interagiu com o moodle";
-        document.getElementById("graph-canvas").appendChild(txt);
-        return;
-    }
-
-    // Draw graph of interactions
-    const dag = d3.dagStratify()(contents[JSON_INTERACTIONS]);
-    const nodeRadius = 20;
-    const layout = d3
-        .sugiyama() // base layout
-        .nodeSize((node) => [(node ? 3.6 : 0.25) * nodeRadius, 3 * nodeRadius]); // set node size instead of constraining to fit
-    const { width, height } = layout(dag);
-
-    // --------------------------------
-    // Rendering
-    // --------------------------------
-    const svgSelection = d3.select("#graph-canvas");
-    svgSelection.attr("viewBox", [0, 0, height, width].join(" "));
-
-    // How to draw edges
-    const line = d3
-        .line()
-        .curve(d3.curveMonotoneX)
-        .x((d) => d.y)
-        .y((d) => d.x);
-
-    // Plot edges
-    svgSelection
-        .append("g")
-        .selectAll("path")
-        .data(dag.links())
-        .enter()
-        .append("path")
-        .attr("d", ({ points }) => line(points))
-        .attr("fill", "none")
-        .attr("stroke-width", 1)
-        .attr("stroke", "black");
-
-    // Select nodes
-    const nodes = svgSelection
-        .append("g")
-        .selectAll("g")
-        .data(dag.descendants())
-        .enter()
-        .append("g")
-        .attr("transform", ({ x, y }) => `translate(${y}, ${x})`);
-    
-    // Show event details of each node on mouse hover
-    var div = d3.select("body").append("div")
-        .attr("class", "tooltip-node")
-        .style("opacity", 0);
-
-    const trajectoryDiv = document.getElementById('trajectory-div');
-
-    nodes.on('mouseover', function(e, d) {
-        div.transition()
-            .duration(50)
-            .style("opacity", 1);
-        div.html(getTooltipText(d.data))
-            .style("left", getTooltipLeftPosition(e, trajectoryDiv) + "px")
-            .style("top", getTooltipTopPosition(e, trajectoryDiv) + "px");
-    })
-    .on('mouseout', function(_, _) {
-        div.transition()
-            .duration(50)
-            .style("opacity", 0);
-    });
-
-    // Plot node shapes
-    function drawNodeShape(nodeCategory) {
-        // Method for generating the symbol to display for the node
-        var symbolGenerator = d3.symbol().type(nodeCategory.shape).size(nodeCategory.size);
-        var pathData = symbolGenerator();
-
-        // Filters for components present in the event list for each category
-        nodes
-            .filter((d) => nodeCategory.eventList.includes(d.data[JSON_INTERACTION_COMPONENT]))
-            .append('path')
-            .attr('d', pathData)
-            .attr('fill', (d) => getNodeColor(d.data));
-    }
-    eventCategories.forEach(drawNodeShape);
-
-    // Add text to nodes
-    nodes
-        .append("text")
-        .text((d) => getNodeText(d.data, gradeList))
-        .attr("font-size", "10")
-        .attr("font-weight", "bold")
-        .attr("font-family", "sans-serif")
-        .attr("text-anchor", "middle")
-        .attr("alignment-baseline", "middle")
-        .attr("fill", "white");
+    displayStudentTrajectory(contents);
 }
 
 // Adds html elements for the student metadata and fill it with the given student data
@@ -361,6 +255,117 @@ function studentMetadataButtonEventHandler() {
     } else {
         content.style.maxHeight = content.scrollHeight + "px";
     }
+}
+
+function displayStudentTrajectory(contents) {
+    // Based on examples on:
+    // https://observablehq.com/@erikbrinkman/d3-dag-sugiyama
+    // https://observablehq.com/@erikbrinkman/d3-dag-topological
+
+    // TODO: Create div and svg dynamically for each student, append to body
+
+    // Clean canvas first
+    d3.selectAll("svg > *").remove();
+
+    // Checks if there are interactions to show, if not returns
+    if (!(JSON_INTERACTIONS in contents)) {
+        var txt = document.createElementNS("http://www.w3.org/2000/svg", 'text');
+        txt.setAttributeNS(null, 'x', 10);
+        txt.setAttributeNS(null, 'y', 50);
+        txt.setAttributeNS(null, 'font-size', 18);
+        txt.innerHTML = "Estudante não interagiu com o moodle";
+        document.getElementById("graph-canvas").appendChild(txt);
+        return;
+    }
+
+    // Draw graph of interactions
+    const dag = d3.dagStratify()(contents[JSON_INTERACTIONS]);
+    const nodeRadius = 20;
+    const layout = d3
+        .sugiyama() // base layout
+        .nodeSize((node) => [(node ? 3.6 : 0.25) * nodeRadius, 3 * nodeRadius]); // set node size instead of constraining to fit
+    const { width, height } = layout(dag);
+
+    // --------------------------------
+    // Rendering
+    // --------------------------------
+    const svgSelection = d3.select("#graph-canvas");
+    svgSelection.attr("viewBox", [0, 0, height, width].join(" "));
+
+    // How to draw edges
+    const line = d3
+        .line()
+        .curve(d3.curveMonotoneX)
+        .x((d) => d.y)
+        .y((d) => d.x);
+
+    // Plot edges
+    svgSelection
+        .append("g")
+        .selectAll("path")
+        .data(dag.links())
+        .enter()
+        .append("path")
+        .attr("d", ({ points }) => line(points))
+        .attr("fill", "none")
+        .attr("stroke-width", 1)
+        .attr("stroke", "black");
+
+    // Select nodes
+    const nodes = svgSelection
+        .append("g")
+        .selectAll("g")
+        .data(dag.descendants())
+        .enter()
+        .append("g")
+        .attr("transform", ({ x, y }) => `translate(${y}, ${x})`);
+    
+    // Show event details of each node on mouse hover
+    var div = d3.select("body").append("div")
+        .attr("class", "tooltip-node")
+        .style("opacity", 0);
+
+    const trajectoryDiv = document.getElementById('trajectory-div');
+
+    nodes.on('mouseover', function(e, d) {
+        div.transition()
+            .duration(50)
+            .style("opacity", 1);
+        div.html(getTooltipText(d.data))
+            .style("left", getTooltipLeftPosition(e, trajectoryDiv) + "px")
+            .style("top", getTooltipTopPosition(e, trajectoryDiv) + "px");
+    })
+    .on('mouseout', function(_, _) {
+        div.transition()
+            .duration(50)
+            .style("opacity", 0);
+    });
+
+    // Plot node shapes
+    function drawNodeShape(nodeCategory) {
+        // Method for generating the symbol to display for the node
+        var symbolGenerator = d3.symbol().type(nodeCategory.shape).size(nodeCategory.size);
+        var pathData = symbolGenerator();
+
+        // Filters for components present in the event list for each category
+        nodes
+            .filter((d) => nodeCategory.eventList.includes(d.data[JSON_INTERACTION_COMPONENT]))
+            .append('path')
+            .attr('d', pathData)
+            .attr('fill', (d) => getNodeColor(d.data));
+    }
+    eventCategories.forEach(drawNodeShape);
+
+    // Add text to nodes
+    nodes
+        .append("text")
+        .text((d) => getNodeText(d.data, gradeList))
+        .attr("font-size", "10")
+        .attr("font-weight", "bold")
+        .attr("font-family", "sans-serif")
+        .attr("text-anchor", "middle")
+        .attr("alignment-baseline", "middle")
+        .attr("fill", "white");
 }
 
 // Converts node data into a presentable form for the tooltip

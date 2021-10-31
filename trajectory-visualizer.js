@@ -107,6 +107,14 @@ function processStudentData(studentData) {
         return;
     }
 
+    // Check if it is the first student being selected, if it is show the main headers
+    if (currentStudentsShown.length == 0) {
+        mainHeaders = document.getElementsByClassName('main-header');
+        for (var i = 0; i < mainHeaders.length; i++) {
+            mainHeaders[i].style.display = 'block';
+        }
+    }
+
     // Load student data and show on the UI
     updatedStudentData = prepareDataForDAG(jsonData);
     displayContents(updatedStudentData);

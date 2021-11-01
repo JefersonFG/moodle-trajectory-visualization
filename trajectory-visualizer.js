@@ -108,16 +108,16 @@ function processStudentData(studentData) {
     }
 
     // Check if it is the first student being selected, if it is show the main headers
-    if (currentStudentsShown.length == 0) {
-        mainHeaders = document.getElementsByClassName('main-header');
-        for (var i = 0; i < mainHeaders.length; i++) {
+    if (currentStudentsShown.length === 0) {
+        let mainHeaders = document.getElementsByClassName('main-header');
+        for (let i = 0; i < mainHeaders.length; i++) {
             mainHeaders[i].style.display = 'block';
         }
     }
 
     // Load student data and show on the UI
-    updatedStudentData = prepareDataForDAG(jsonData);
-    displayContents(updatedStudentData);
+    let updatedStudentData = prepareDataForDAG(jsonData);
+    displayStudentData(updatedStudentData);
     
     // Save student name on list of students shown on the UI
     currentStudentsShown.push(jsonData[JSON_NAME]);
@@ -130,10 +130,14 @@ function prepareDataForDAG(studentData) {
     if (!(JSON_INTERACTIONS in studentData)) {
         return studentData;
     }
-    updatedInteractions = []
-    current_id = 0;
+    let updatedInteractions = []
+    let current_id = 0;
     Object.entries(studentData[JSON_INTERACTIONS]).forEach(([_, interaction]) => {
-        processedInteraction = {"label": "I" + (current_id + 1).toString(), "id": current_id.toString(), ...interaction};
+        let processedInteraction = {
+            "label": "I" + (current_id + 1).toString(),
+            "id": current_id.toString(), ...interaction
+        };
+        let parentId;
         if (current_id > 0) {
             parentId = current_id - 1
             processedInteraction = {...processedInteraction, "parentIds": [parentId.toString()]};
@@ -146,12 +150,13 @@ function prepareDataForDAG(studentData) {
 }
 
 // Displays the contents of the json file on the UI
-function displayContents(contents) {
+function displayStudentData(studentData) {
     // Student metadata
-    displayStudentInfo(contents);
+    // Returns the list of grades of the student, to identify them on the trajectory nodes
+    let gradeList = displayStudentInfo(studentData);
 
     // Interactions
-    displayStudentTrajectory(contents);
+    displayStudentTrajectory(studentData, gradeList);
 }
 
 // Adds html elements for the student metadata and fill it with the given student data
@@ -180,7 +185,7 @@ function displayStudentInfo(studentData) {
 
     // Student name
     const studentNameLabel = document.createElement('p');
-    studentName = '-';
+    let studentName = '-';
     if (JSON_NAME in studentData) {
         studentName = studentData[JSON_NAME];
     }
@@ -189,7 +194,7 @@ function displayStudentInfo(studentData) {
 
     // Final grade
     const studentFinalGradeLabel = document.createElement('p');
-    studentFinalGrade = '-';
+    let studentFinalGrade = '-';
     if (JSON_FINAL_GRADE in studentData) {
         studentFinalGrade = studentData[JSON_FINAL_GRADE];
     }
@@ -198,16 +203,16 @@ function displayStudentInfo(studentData) {
 
     // Number of forum interactions
     const studentNumForumInteractionsLabel = document.createElement('p');
-    studentNumForumInteractions = '-';
+    let studentNumForumInteractions = '-';
     if (JSON_NUM_FORUM_INTERACTIONS in studentData) {
-        NumForumInteractions = studentData[JSON_NUM_FORUM_INTERACTIONS];
+        studentNumForumInteractions = studentData[JSON_NUM_FORUM_INTERACTIONS];
     }
-    studentNumForumInteractionsLabel.innerHTML = '<b>Número de interações nos fóruns da disciplina:</b> ' + NumForumInteractions;
+    studentNumForumInteractionsLabel.innerHTML = '<b>Número de interações nos fóruns da disciplina:</b> ' + studentNumForumInteractions;
     studentInfoDiv.appendChild(studentNumForumInteractionsLabel);
 
     // Total number of interactions with moodle
     const studentTotalInteractionsLabel = document.createElement('p');
-    studentTotalInteractions = '-';
+    let studentTotalInteractions = '-';
     if (JSON_NUM_TOTAL_INTERACTIONS in studentData) {
         studentTotalInteractions = studentData[JSON_NUM_TOTAL_INTERACTIONS];
     }
@@ -223,9 +228,10 @@ function displayStudentInfo(studentData) {
     studentGrades.innerHTML = '-';
 
     // Saves a list of grades for the student, so nodes related to the grading activity can be identified
-    gradeList = {};
-    gradeCount = 0;
+    let gradeList = {};
+    let gradeCount = 0;
 
+    let gradeTitle;
     if (JSON_GRADES in studentData) {
         studentGrades.innerHTML = '';
         for ([gradeTitle, gradeValue] of Object.entries(studentData[JSON_GRADES])) {
@@ -244,12 +250,13 @@ function displayStudentInfo(studentData) {
         }
     }
     studentInfoDiv.appendChild(studentGrades);
+    return gradeList;
 }
 
 // Event handler for the student metadata button
 function studentMetadataButtonEventHandler() {
     this.classList.toggle("active");
-    var content = this.nextElementSibling;
+    const content = this.nextElementSibling;
     if (content.style.maxHeight){
         content.style.maxHeight = null;
     } else {
@@ -257,7 +264,7 @@ function studentMetadataButtonEventHandler() {
     }
 }
 
-function displayStudentTrajectory(contents) {
+function displayStudentTrajectory(studentData, gradeList) {
     // Based on examples on:
     // https://observablehq.com/@erikbrinkman/d3-dag-sugiyama
     // https://observablehq.com/@erikbrinkman/d3-dag-topological
@@ -268,18 +275,18 @@ function displayStudentTrajectory(contents) {
     d3.selectAll("svg > *").remove();
 
     // Checks if there are interactions to show, if not returns
-    if (!(JSON_INTERACTIONS in contents)) {
-        var txt = document.createElementNS("http://www.w3.org/2000/svg", 'text');
-        txt.setAttributeNS(null, 'x', 10);
-        txt.setAttributeNS(null, 'y', 50);
-        txt.setAttributeNS(null, 'font-size', 18);
+    if (!(JSON_INTERACTIONS in studentData)) {
+        const txt = document.createElementNS("http://www.w3.org/2000/svg", 'text');
+        txt.setAttributeNS(null, 'x', '10');
+        txt.setAttributeNS(null, 'y', '50');
+        txt.setAttributeNS(null, 'font-size', '18');
         txt.innerHTML = "Estudante não interagiu com o moodle";
         document.getElementById("graph-canvas").appendChild(txt);
         return;
     }
 
     // Draw graph of interactions
-    const dag = d3.dagStratify()(contents[JSON_INTERACTIONS]);
+    const dag = d3.dagStratify()(studentData[JSON_INTERACTIONS]);
     const nodeRadius = 20;
     const layout = d3
         .sugiyama() // base layout
@@ -321,7 +328,7 @@ function displayStudentTrajectory(contents) {
         .attr("transform", ({ x, y }) => `translate(${y}, ${x})`);
     
     // Show event details of each node on mouse hover
-    var div = d3.select("body").append("div")
+    const div = d3.select("body").append("div")
         .attr("class", "tooltip-node")
         .style("opacity", 0);
 
@@ -335,7 +342,7 @@ function displayStudentTrajectory(contents) {
             .style("left", getTooltipLeftPosition(e, trajectoryDiv) + "px")
             .style("top", getTooltipTopPosition(e, trajectoryDiv) + "px");
     })
-    .on('mouseout', function(_, _) {
+    .on('mouseout', function() {
         div.transition()
             .duration(50)
             .style("opacity", 0);
@@ -344,8 +351,8 @@ function displayStudentTrajectory(contents) {
     // Plot node shapes
     function drawNodeShape(nodeCategory) {
         // Method for generating the symbol to display for the node
-        var symbolGenerator = d3.symbol().type(nodeCategory.shape).size(nodeCategory.size);
-        var pathData = symbolGenerator();
+        const symbolGenerator = d3.symbol().type(nodeCategory.shape).size(nodeCategory.size);
+        const pathData = symbolGenerator();
 
         // Filters for components present in the event list for each category
         nodes
@@ -403,7 +410,6 @@ function getNodeText(node, gradeList) {
     let nodeText = node.label;
     const currentEventContext = node[JSON_INTERACTION_EVENT_CONTEXT];
     if (currentEventContext in gradeList) {
-        console.log("Success");
         nodeText = `${nodeText} - ${gradeList[currentEventContext]}`;
     }
     return nodeText;
@@ -413,9 +419,9 @@ function getNodeText(node, gradeList) {
 document.getElementById('file-input')
     .addEventListener('change', readSingleFile, false);
 
-// Sets the event listener for the collabsible student info layout
-var coll = document.getElementsByClassName("student-info-button");
-var i;
+// Sets the event listener for the collapsible student info layout
+const coll = document.getElementsByClassName("student-info-button");
+let i;
 
 for (i = 0; i < coll.length; i++) {
     coll[i].addEventListener("click", studentMetadataButtonEventHandler);

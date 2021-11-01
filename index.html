@@ -14,24 +14,11 @@
     <h2>Selecione o arquivo com as notas do aluno para gerar a visualização da sua trajetória no curso:</h2>
     <input type="file" id="file-input" />
 
-    <h2>Informações dos alunos</h2>
-    <button type="button" class="student-info-button">Abrir informações do aluno 1</button>
-    <div class="student-info-div">
-        <h2>Resumo</h2>
-        <p><span id="student-name-label"><b>Nome do aluno: </b></span><span id="student-name"></span></p>
-        <p><span id="student-final-grade-label"><b>Nota final: </b></span><span id="student-final-grade"></span></p>
-        <p><span id="student-num-forum-interactions-label"><b>Número de interações nos fóruns da disciplina: </b>
-            </span><span id="student-num-forum-interactions"></span></p>
-        <p><span id="student-total-interactions-label"><b>Número total de interações com o moodle: </b>
-            </span><span id="student-total-interactions"></span></p>
+    <h2 class="main-header">Informações dos alunos</h2>
+    <div id="student-info-section-div"></div>
 
-        <h2 id="student-grades-label"><b>Notas do aluno</b></h2>
-        <p id="student-grades">-</p>
-    </div>
-
-    <h2 id="student-interactions-label"><b>Trajetória de aprendizado dos alunos</b></h2>
-    <!-- Graph canvas as svg inside a scrollable div -->
-    <div id="trajectory-div" class="horizontally-scrollable-div"><svg id="graph-canvas"></svg></div>
+    <h2 class="main-header"><b>Trajetória de aprendizado dos alunos</b></h2>
+    <div id="student-trajectory-section-div"></div>
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://unpkg.com/d3-dag@0.8.1"></script>

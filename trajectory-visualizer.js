@@ -1,19 +1,25 @@
 // Constants for the json elements
-JSON_NAME = "name"
-JSON_FINAL_GRADE = "final_grade"
-JSON_NUM_FORUM_INTERACTIONS = "forum_interactions"
-JSON_NUM_TOTAL_INTERACTIONS = "total_moodle_interactions"
-JSON_GRADES = "grades"
-JSON_INTERACTIONS = "interactions"
+JSON_NAME = "name";
+JSON_FINAL_GRADE = "final_grade";
+JSON_NUM_FORUM_INTERACTIONS = "forum_interactions";
+JSON_NUM_TOTAL_INTERACTIONS = "total_moodle_interactions";
+JSON_GRADES = "grades";
+JSON_INTERACTIONS = "interactions";
 
-JSON_INTERACTION_HOUR = "Hora"
-JSON_INTERACTION_EVENT_CONTEXT = "Contexto do Evento"
-JSON_INTERACTION_COMPONENT = "Componente"
-JSON_INTERACTION_EVENT_NAME = "Nome do evento"
+JSON_INTERACTION_HOUR = "Hora";
+JSON_INTERACTION_EVENT_CONTEXT = "Contexto do Evento";
+JSON_INTERACTION_COMPONENT = "Componente";
+JSON_INTERACTION_EVENT_NAME = "Nome do evento";
 
 // Constants for UI values
-TOOLTIP_HORIZONTAL_OFFSET = -250
-TOOLTIP_VERTICAL_OFFSET = -200
+TOOLTIP_HORIZONTAL_OFFSET = -250;
+TOOLTIP_VERTICAL_OFFSET = -200;
+
+// Maximum number of students that the UI will show at the same time
+MAX_STUDENTS_VISIBLE = 3;
+
+// List of current shown students, to avoid duplicates on the UI and control number of simultaneous student trajectories being shown
+currentStudentsShown = [];
 
 // Event categories for classification in the trajectory
 // The idea is that each category is represented differently to ease evaluation of the trajectory
@@ -43,7 +49,7 @@ const videocallCategory = {
 };
 
 const otherCategory = {
-    eventList: ["Relatório de usuário", "Relatório geral", "Sistema"],
+    eventList: ["Relatório do usuário", "Relatório geral", "Sistema"],
     shape: d3.symbolDiamond,
     size: 1000
 };
@@ -86,9 +92,41 @@ function readSingleFile(filePath) {
 
 // Main entrypoint for processing user data once picked by the user on the UI
 function processStudentData(studentData) {
+    // Parse input file
     let jsonData = JSON.parse(studentData);
-    updatedStudentData = prepareDataForDAG(jsonData);
-    displayContents(updatedStudentData);
+
+    // Checks first if the data has a student name, if not then it is possible that the JSON file is invalid
+    if (!(JSON_NAME in jsonData)) {
+        window.alert("Arquivo não contém o nome do estudante, confira se o arquivo é válido");
+        return;
+    }
+
+    // Check if a new student has been selected
+    if (currentStudentsShown.includes(jsonData[JSON_NAME])) {
+        console.log(`Student ${jsonData[JSON_NAME]} already shown on the UI`);
+        return;
+    }
+
+    // Check if the student limit has been reached
+    if (currentStudentsShown.length >= MAX_STUDENTS_VISIBLE) {
+        window.alert("Número máximo de estudantes exibidos simultâneamente atingido, atualize a página para exibir novas trajetórias");
+        return;
+    }
+
+    // Check if it is the first student being selected, if it is show the main headers
+    if (currentStudentsShown.length === 0) {
+        let mainHeaders = document.getElementsByClassName('main-header');
+        for (let i = 0; i < mainHeaders.length; i++) {
+            mainHeaders[i].style.display = 'block';
+        }
+    }
+
+    // Load student data and show on the UI
+    let updatedStudentData = prepareDataForDAG(jsonData);
+    displayStudentData(updatedStudentData);
+    
+    // Save student name on list of students shown on the UI
+    currentStudentsShown.push(jsonData[JSON_NAME]);
 }
 
 // The d3-dag library expect source data to have ids on each node, with the parentId field defining the connections between nodes
@@ -98,10 +136,14 @@ function prepareDataForDAG(studentData) {
     if (!(JSON_INTERACTIONS in studentData)) {
         return studentData;
     }
-    updatedInteractions = []
-    current_id = 0;
+    let updatedInteractions = []
+    let current_id = 0;
     Object.entries(studentData[JSON_INTERACTIONS]).forEach(([_, interaction]) => {
-        processedInteraction = {"label": "I" + (current_id + 1).toString(), "id": current_id.toString(), ...interaction};
+        let processedInteraction = {
+            "label": "I" + (current_id + 1).toString(),
+            "id": current_id.toString(), ...interaction
+        };
+        let parentId;
         if (current_id > 0) {
             parentId = current_id - 1
             processedInteraction = {...processedInteraction, "parentIds": [parentId.toString()]};
@@ -114,40 +156,91 @@ function prepareDataForDAG(studentData) {
 }
 
 // Displays the contents of the json file on the UI
-function displayContents(contents) {
+function displayStudentData(studentData) {
     // Student metadata
-    let element = document.getElementById('student-name');
-    element.textContent = '-';
-    if (JSON_NAME in contents) {
-        element.textContent = contents[JSON_NAME];
-    }
-    element = document.getElementById('student-final-grade');
-    element.textContent = '-';
-    if (JSON_FINAL_GRADE in contents) {
-        element.textContent = contents[JSON_FINAL_GRADE];
-    }
-    element = document.getElementById('student-num-forum-interactions');
-    element.textContent = '-';
-    if (JSON_NUM_FORUM_INTERACTIONS in contents) {
-        element.textContent = contents[JSON_NUM_FORUM_INTERACTIONS];
-    }
-    element = document.getElementById('student-total-interactions');
-    element.textContent = '-';
-    if (JSON_NUM_TOTAL_INTERACTIONS in contents) {
-        element.textContent = contents[JSON_NUM_TOTAL_INTERACTIONS];
+    // Returns the list of grades of the student, to identify them on the trajectory nodes
+    let gradeList = displayStudentInfo(studentData);
+
+    // Interactions
+    displayStudentTrajectory(studentData, gradeList);
+}
+
+// Adds html elements for the student metadata and fill it with the given student data
+function displayStudentInfo(studentData) {
+    const studentInfoSectionDiv = document.getElementById('student-info-section-div');
+
+    let studentName = '-';
+    if (JSON_NAME in studentData) {
+        studentName = studentData[JSON_NAME];
     }
 
-    // Grades
-    element = document.getElementById('student-grades');
-    element.textContent = '-';
+    // Add a button for the collapsible layout
+    const studentInfoButton = document.createElement('button');
+    studentInfoButton.classList.add('student-info-button');
+    studentInfoButton.innerText =  `Abrir informações do (a) aluno (a) "${studentName}"`;
+    studentInfoSectionDiv.appendChild(studentInfoButton);
+
+    // Set the event handler
+    studentInfoButton.addEventListener("click", studentMetadataButtonEventHandler);
+
+    // Add the div encompassing the collapsible layout
+    const studentInfoDiv = document.createElement('div');
+    studentInfoDiv.classList.add('student-info-div');
+    studentInfoSectionDiv.appendChild(studentInfoDiv);
+
+    // Add the student data inside the div
+    const summaryHeader = document.createElement('h2');
+    summaryHeader.innerText = 'Resumo';
+    studentInfoDiv.appendChild(summaryHeader);
+
+    // Student name
+    const studentNameLabel = document.createElement('p');
+    studentNameLabel.innerHTML = '<b>Nome do aluno:</b> ' + studentName;
+    studentInfoDiv.appendChild(studentNameLabel);
+
+    // Final grade
+    const studentFinalGradeLabel = document.createElement('p');
+    let studentFinalGrade = '-';
+    if (JSON_FINAL_GRADE in studentData) {
+        studentFinalGrade = studentData[JSON_FINAL_GRADE];
+    }
+    studentFinalGradeLabel.innerHTML = '<b>Nota final:</b> ' + studentFinalGrade;
+    studentInfoDiv.appendChild(studentFinalGradeLabel);
+
+    // Number of forum interactions
+    const studentNumForumInteractionsLabel = document.createElement('p');
+    let studentNumForumInteractions = '-';
+    if (JSON_NUM_FORUM_INTERACTIONS in studentData) {
+        studentNumForumInteractions = studentData[JSON_NUM_FORUM_INTERACTIONS];
+    }
+    studentNumForumInteractionsLabel.innerHTML = '<b>Número de interações nos fóruns da disciplina:</b> ' + studentNumForumInteractions;
+    studentInfoDiv.appendChild(studentNumForumInteractionsLabel);
+
+    // Total number of interactions with moodle
+    const studentTotalInteractionsLabel = document.createElement('p');
+    let studentTotalInteractions = '-';
+    if (JSON_NUM_TOTAL_INTERACTIONS in studentData) {
+        studentTotalInteractions = studentData[JSON_NUM_TOTAL_INTERACTIONS];
+    }
+    studentTotalInteractionsLabel.innerHTML = '<b>Número total de interações com o moodle:</b> ' + studentTotalInteractions;
+    studentInfoDiv.appendChild(studentTotalInteractionsLabel);
+
+    // Show student grades
+    const gradesHeader = document.createElement('h2');
+    gradesHeader.innerText = 'Notas do aluno';
+    studentInfoDiv.appendChild(gradesHeader);
+
+    const studentGrades = document.createElement('p');
+    studentGrades.innerHTML = '-';
 
     // Saves a list of grades for the student, so nodes related to the grading activity can be identified
-    gradeList = {};
-    gradeCount = 0;
+    let gradeList = {};
+    let gradeCount = 1;
 
-    if (JSON_GRADES in contents) {
-        element.textContent = "";
-        for ([gradeTitle, gradeValue] of Object.entries(contents[JSON_GRADES])) {
+    let gradeTitle;
+    if (JSON_GRADES in studentData) {
+        studentGrades.innerHTML = '';
+        for ([gradeTitle, gradeValue] of Object.entries(studentData[JSON_GRADES])) {
             // TODO: Move this to cleaning module
             // Trim title
             if (gradeTitle.endsWith("(Real)")) {
@@ -158,27 +251,63 @@ function displayContents(contents) {
             gradeTitle = gradeTitle.replace('\u00a0', ' ');
             gradeTitle = gradeTitle.trim();
             gradeList[gradeTitle] = `N${gradeCount}`;
-            element.innerHTML = element.innerHTML + (`<p><b>N${gradeCount} - ${gradeTitle}:</b> ${gradeValue}</p>`);
+            studentGrades.innerHTML = studentGrades.innerHTML + (`<p><b>N${gradeCount} - ${gradeTitle}:</b> ${gradeValue}</p>`);
             gradeCount++;
         }
     }
+    studentInfoDiv.appendChild(studentGrades);
+    return gradeList;
+}
 
-    // Interactions
+// Event handler for the student metadata button
+function studentMetadataButtonEventHandler() {
+    this.classList.toggle("active");
+    const content = this.nextElementSibling;
+    if (content.style.maxHeight){
+        content.style.maxHeight = null;
+    } else {
+        content.style.maxHeight = content.scrollHeight + "px";
+    }
+}
 
+function displayStudentTrajectory(studentData, gradeList) {
     // Based on examples on:
     // https://observablehq.com/@erikbrinkman/d3-dag-sugiyama
     // https://observablehq.com/@erikbrinkman/d3-dag-topological
 
-    // Clean canvas first
-    d3.selectAll("svg > *").remove();
+    const studentTrajectorySectionDiv = document.getElementById('student-trajectory-section-div');
 
-    // Checks if there are interactions to show, if not returns
-    if (!(JSON_INTERACTIONS in contents)) {
+    let studentName = '-';
+    if (JSON_NAME in studentData) {
+        studentName = studentData[JSON_NAME];
+    }
+
+    // Checks if there are interactions to show, if not indicates and returns
+    if (!(JSON_INTERACTIONS in studentData)) {
+        const noTrajectoryMessage = document.createElement('p');
+        noTrajectoryMessage.innerHTML = `<b>Estudante "${studentName}" não interagiu com o moodle</b>`;
+        studentTrajectorySectionDiv.appendChild(noTrajectoryMessage);
         return;
     }
 
+    // Add the student name before the trajectory
+    const trajectoryTitle = document.createElement('h3');
+    trajectoryTitle.innerHTML = `Trajetória do (a) estudante ${studentName}`;
+    studentTrajectorySectionDiv.appendChild(trajectoryTitle);
+
+    // Create scrollable div containing the svg to draw on
+    const trajectoryDiv = document.createElement('div');
+    trajectoryDiv.classList.add('horizontally-scrollable-div');
+    studentTrajectorySectionDiv.appendChild(trajectoryDiv);
+
+    // Add the svg where the trajectory will be drawn
+    const canvasId = `graph-canvas-${currentStudentsShown.length}`;
+    const graphCanvas = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    graphCanvas.id = canvasId;
+    trajectoryDiv.appendChild(graphCanvas);
+
     // Draw graph of interactions
-    const dag = d3.dagStratify()(contents[JSON_INTERACTIONS]);
+    const dag = d3.dagStratify()(studentData[JSON_INTERACTIONS]);
     const nodeRadius = 20;
     const layout = d3
         .sugiyama() // base layout
@@ -188,7 +317,7 @@ function displayContents(contents) {
     // --------------------------------
     // Rendering
     // --------------------------------
-    const svgSelection = d3.select("svg");
+    const svgSelection = d3.select(`#${canvasId}`);
     svgSelection.attr("viewBox", [0, 0, height, width].join(" "));
 
     // How to draw edges
@@ -220,7 +349,7 @@ function displayContents(contents) {
         .attr("transform", ({ x, y }) => `translate(${y}, ${x})`);
     
     // Show event details of each node on mouse hover
-    var div = d3.select("body").append("div")
+    const div = d3.select("body").append("div")
         .attr("class", "tooltip-node")
         .style("opacity", 0);
 
@@ -229,10 +358,10 @@ function displayContents(contents) {
             .duration(50)
             .style("opacity", 1);
         div.html(getTooltipText(d.data))
-            .style("left", getTooltipLeftPosition(e) + "px")
-            .style("top", getTooltipTopPosition(e) + "px");
+            .style("left", getTooltipLeftPosition(e, trajectoryDiv) + "px")
+            .style("top", getTooltipTopPosition(e, trajectoryDiv) + "px");
     })
-    .on('mouseout', function(_, _) {
+    .on('mouseout', function() {
         div.transition()
             .duration(50)
             .style("opacity", 0);
@@ -241,8 +370,8 @@ function displayContents(contents) {
     // Plot node shapes
     function drawNodeShape(nodeCategory) {
         // Method for generating the symbol to display for the node
-        var symbolGenerator = d3.symbol().type(nodeCategory.shape).size(nodeCategory.size);
-        var pathData = symbolGenerator();
+        const symbolGenerator = d3.symbol().type(nodeCategory.shape).size(nodeCategory.size);
+        const pathData = symbolGenerator();
 
         // Filters for components present in the event list for each category
         nodes
@@ -275,14 +404,12 @@ function getTooltipText(nodeData) {
 }
 
 // Left position of the tooltip, taking the current pointer position (based on event), parent div position and screen limits into account
-function getTooltipLeftPosition(e) {
-    const trajectoryDiv = document.getElementById('trajectory-div');
+function getTooltipLeftPosition(e, trajectoryDiv) {
     return Math.max(trajectoryDiv.offsetLeft + d3.pointer(e, trajectoryDiv)[0] + TOOLTIP_HORIZONTAL_OFFSET, 0);
 }
 
 // Top position of the tooltip, taking the current pointer position (based on event), parent div position and screen limits into account
-function getTooltipTopPosition(e) {
-    const trajectoryDiv = document.getElementById('trajectory-div');
+function getTooltipTopPosition(e, trajectoryDiv) {
     return Math.max(trajectoryDiv.offsetTop + d3.pointer(e, trajectoryDiv)[1] + TOOLTIP_VERTICAL_OFFSET, 0);
 }
 
@@ -302,7 +429,6 @@ function getNodeText(node, gradeList) {
     let nodeText = node.label;
     const currentEventContext = node[JSON_INTERACTION_EVENT_CONTEXT];
     if (currentEventContext in gradeList) {
-        console.log("Success");
         nodeText = `${nodeText} - ${gradeList[currentEventContext]}`;
     }
     return nodeText;
@@ -312,18 +438,10 @@ function getNodeText(node, gradeList) {
 document.getElementById('file-input')
     .addEventListener('change', readSingleFile, false);
 
-// Sets the event listener for the collabsible student info layout
-var coll = document.getElementsByClassName("student-info-button");
-var i;
+// Sets the event listener for the collapsible student info layout
+const coll = document.getElementsByClassName("student-info-button");
+let i;
 
 for (i = 0; i < coll.length; i++) {
-    coll[i].addEventListener("click", function() {
-        this.classList.toggle("active");
-        var content = this.nextElementSibling;
-        if (content.style.maxHeight){
-            content.style.maxHeight = null;
-        } else {
-            content.style.maxHeight = content.scrollHeight + "px";
-        }
-    });
+    coll[i].addEventListener("click", studentMetadataButtonEventHandler);
 }

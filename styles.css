@@ -4,6 +4,11 @@ body {
     overflow-x: hidden;
 }
 
+/* Hide main headers by default, show them once the first student has been selected for viewing */
+.main-header {
+    display: none;
+}
+
 /* Set trajectory view to scroll horizontally */
 .horizontally-scrollable-div {
     width: 100%;

@@ -95,7 +95,13 @@ function processStudentData(studentData) {
     // Parse input file
     let jsonData = JSON.parse(studentData);
 
-    // Check first if a new student has been selected
+    // Checks first if the data has a student name, if not then it is possible that the JSON file is invalid
+    if (!(JSON_NAME in jsonData)) {
+        window.alert("Arquivo não contém o nome do estudante, confira se o arquivo é válido");
+        return;
+    }
+
+    // Check if a new student has been selected
     if (currentStudentsShown.includes(jsonData[JSON_NAME])) {
         console.log(`Student ${jsonData[JSON_NAME]} already shown on the UI`);
         return;
@@ -163,11 +169,15 @@ function displayStudentData(studentData) {
 function displayStudentInfo(studentData) {
     const studentInfoSectionDiv = document.getElementById('student-info-section-div');
 
+    let studentName = '-';
+    if (JSON_NAME in studentData) {
+        studentName = studentData[JSON_NAME];
+    }
+
     // Add a button for the collapsible layout
     const studentInfoButton = document.createElement('button');
     studentInfoButton.classList.add('student-info-button');
-    // TODO: Identify the student
-    studentInfoButton.innerText = 'Abrir informações do aluno';
+    studentInfoButton.innerText =  `Abrir informações do (a) aluno (a) "${studentName}"`;
     studentInfoSectionDiv.appendChild(studentInfoButton);
 
     // Set the event handler
@@ -185,10 +195,6 @@ function displayStudentInfo(studentData) {
 
     // Student name
     const studentNameLabel = document.createElement('p');
-    let studentName = '-';
-    if (JSON_NAME in studentData) {
-        studentName = studentData[JSON_NAME];
-    }
     studentNameLabel.innerHTML = '<b>Nome do aluno:</b> ' + studentName;
     studentInfoDiv.appendChild(studentNameLabel);
 
@@ -229,7 +235,7 @@ function displayStudentInfo(studentData) {
 
     // Saves a list of grades for the student, so nodes related to the grading activity can be identified
     let gradeList = {};
-    let gradeCount = 0;
+    let gradeCount = 1;
 
     let gradeTitle;
     if (JSON_GRADES in studentData) {
@@ -269,21 +275,36 @@ function displayStudentTrajectory(studentData, gradeList) {
     // https://observablehq.com/@erikbrinkman/d3-dag-sugiyama
     // https://observablehq.com/@erikbrinkman/d3-dag-topological
 
-    // TODO: Create div and svg dynamically for each student, append to body
+    const studentTrajectorySectionDiv = document.getElementById('student-trajectory-section-div');
 
-    // Clean canvas first
-    d3.selectAll("svg > *").remove();
+    let studentName = '-';
+    if (JSON_NAME in studentData) {
+        studentName = studentData[JSON_NAME];
+    }
 
-    // Checks if there are interactions to show, if not returns
+    // Checks if there are interactions to show, if not indicates and returns
     if (!(JSON_INTERACTIONS in studentData)) {
-        const txt = document.createElementNS("http://www.w3.org/2000/svg", 'text');
-        txt.setAttributeNS(null, 'x', '10');
-        txt.setAttributeNS(null, 'y', '50');
-        txt.setAttributeNS(null, 'font-size', '18');
-        txt.innerHTML = "Estudante não interagiu com o moodle";
-        document.getElementById("graph-canvas").appendChild(txt);
+        const noTrajectoryMessage = document.createElement('p');
+        noTrajectoryMessage.innerHTML = `<b>Estudante "${studentName}" não interagiu com o moodle</b>`;
+        studentTrajectorySectionDiv.appendChild(noTrajectoryMessage);
         return;
     }
+
+    // Add the student name before the trajectory
+    const trajectoryTitle = document.createElement('h3');
+    trajectoryTitle.innerHTML = `Trajetória do (a) estudante ${studentName}`;
+    studentTrajectorySectionDiv.appendChild(trajectoryTitle);
+
+    // Create scrollable div containing the svg to draw on
+    const trajectoryDiv = document.createElement('div');
+    trajectoryDiv.classList.add('horizontally-scrollable-div');
+    studentTrajectorySectionDiv.appendChild(trajectoryDiv);
+
+    // Add the svg where the trajectory will be drawn
+    const canvasId = `graph-canvas-${currentStudentsShown.length}`;
+    const graphCanvas = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    graphCanvas.id = canvasId;
+    trajectoryDiv.appendChild(graphCanvas);
 
     // Draw graph of interactions
     const dag = d3.dagStratify()(studentData[JSON_INTERACTIONS]);
@@ -296,7 +317,7 @@ function displayStudentTrajectory(studentData, gradeList) {
     // --------------------------------
     // Rendering
     // --------------------------------
-    const svgSelection = d3.select("#graph-canvas");
+    const svgSelection = d3.select(`#${canvasId}`);
     svgSelection.attr("viewBox", [0, 0, height, width].join(" "));
 
     // How to draw edges
@@ -331,8 +352,6 @@ function displayStudentTrajectory(studentData, gradeList) {
     const div = d3.select("body").append("div")
         .attr("class", "tooltip-node")
         .style("opacity", 0);
-
-    const trajectoryDiv = document.getElementById('trajectory-div');
 
     nodes.on('mouseover', function(e, d) {
         div.transition()

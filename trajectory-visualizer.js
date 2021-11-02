@@ -121,6 +121,9 @@ function processStudentData(studentData) {
         }
     }
 
+    // TODO: Refactor, test only
+    testGraph(jsonData);
+
     // Load student data and show on the UI
     let updatedStudentData = prepareDataForDAG(jsonData);
     displayStudentData(updatedStudentData);
@@ -153,6 +156,128 @@ function prepareDataForDAG(studentData) {
     });
     studentData[JSON_INTERACTIONS] = updatedInteractions;
     return studentData;
+}
+
+// TODO: Refactor, test only
+function testGraph(studentData) {
+    // If the student didn't interact with moodle just return, no preparation to do
+    if (!(JSON_INTERACTIONS in studentData)) {
+        return studentData;
+    }
+    let condensedGraph = []
+    let current_id = 0;
+    let previousNode = null;
+    Object.entries(studentData[JSON_INTERACTIONS]).forEach(([_, interaction]) => {
+        let newNode = {
+            "label": "I" + (current_id + 1).toString(),
+            "id": current_id.toString(),
+            ...interaction
+        };
+        if (current_id === 0) {
+            condensedGraph.push(newNode);
+            previousNode = newNode;
+            current_id++;
+        } else {
+            // Search for the node in the graph
+            let currentNode = null;
+            for (let i = 0; i < condensedGraph.length; i++) {
+                if (condensedGraph[i][JSON_INTERACTION_EVENT_CONTEXT] === newNode[JSON_INTERACTION_EVENT_CONTEXT]) {
+                    currentNode = condensedGraph[i];
+
+                    // Create a connection between the previous node and the new node
+                    if ("parentIds" in currentNode) {
+                        // TODO: How to represent multiple connections between nodes?
+                        if (currentNode["parentIds"].indexOf(previousNode["id"].toString()) < 0) {
+                            currentNode["parentIds"].push(previousNode["id"].toString());
+                        }
+                    } else {
+                        currentNode = {...currentNode, "parentIds": [previousNode["id"].toString()]};
+                    }
+                    previousNode = currentNode;
+                    break;
+                }
+            }
+
+            // If not found add to the graph
+            if (currentNode === null) {
+                newNode = {...newNode, "parentIds": [previousNode["id"].toString()]};
+                condensedGraph.push(newNode);
+                previousNode = newNode;
+                current_id++;
+            }
+        }
+    });
+
+    // TODO: Remove
+    console.log(condensedGraph);
+
+    // Draw graph of interactions
+    const dag = d3.dagStratify()(condensedGraph);
+    const nodeRadius = 20;
+    const layout = d3
+        .sugiyama() // base layout
+        .nodeSize((node) => [(node ? 3.6 : 0.25) * nodeRadius, 3 * nodeRadius]); // set node size instead of constraining to fit
+    const { width, height } = layout(dag);
+
+    // --------------------------------
+    // Rendering
+    // --------------------------------
+    const svgSelection = d3.select(`#test-svg`);
+    svgSelection.attr("viewBox", [0, 0, height, width].join(" "));
+
+    // How to draw edges
+    const line = d3
+        .line()
+        .curve(d3.curveMonotoneX)
+        .x((d) => d.y)
+        .y((d) => d.x);
+
+    // Plot edges
+    svgSelection
+        .append("g")
+        .selectAll("path")
+        .data(dag.links())
+        .enter()
+        .append("path")
+        .attr("d", ({ points }) => line(points))
+        .attr("fill", "none")
+        .attr("stroke-width", 1)
+        .attr("stroke", "black");
+
+    // Select nodes
+    const nodes = svgSelection
+        .append("g")
+        .selectAll("g")
+        .data(dag.descendants())
+        .enter()
+        .append("g")
+        .attr("transform", ({ x, y }) => `translate(${y}, ${x})`);
+
+    // Plot node shapes
+    function drawNodeShape(nodeCategory) {
+        // Method for generating the symbol to display for the node
+        const symbolGenerator = d3.symbol().type(nodeCategory.shape).size(nodeCategory.size);
+        const pathData = symbolGenerator();
+
+        // Filters for components present in the event list for each category
+        nodes
+            .filter((d) => nodeCategory.eventList.includes(d.data[JSON_INTERACTION_COMPONENT]))
+            .append('path')
+            .attr('d', pathData)
+            .attr('fill', (d) => getNodeColor(d.data));
+    }
+    eventCategories.forEach(drawNodeShape);
+
+    // Add text to nodes
+    nodes
+        .append("text")
+        .text((d) => d.data.id)
+        .attr("font-size", "10")
+        .attr("font-weight", "bold")
+        .attr("font-family", "sans-serif")
+        .attr("text-anchor", "middle")
+        .attr("alignment-baseline", "middle")
+        .attr("fill", "white");
 }
 
 // Displays the contents of the json file on the UI

@@ -164,7 +164,8 @@ function testGraph(studentData) {
     if (!(JSON_INTERACTIONS in studentData)) {
         return studentData;
     }
-    let condensedGraph = []
+    let condensedGraphNodes = []
+    let condensedGraphEdges = []
     let current_id = 0;
     let previousNode = null;
     Object.entries(studentData[JSON_INTERACTIONS]).forEach(([_, interaction]) => {
@@ -174,25 +175,33 @@ function testGraph(studentData) {
             ...interaction
         };
         if (current_id === 0) {
-            condensedGraph.push(newNode);
+            condensedGraphNodes.push(newNode);
             previousNode = newNode;
             current_id++;
         } else {
             // Search for the node in the graph
             let currentNode = null;
-            for (let i = 0; i < condensedGraph.length; i++) {
-                if (condensedGraph[i][JSON_INTERACTION_EVENT_CONTEXT] === newNode[JSON_INTERACTION_EVENT_CONTEXT]) {
-                    currentNode = condensedGraph[i];
+            for (let i = 0; i < condensedGraphNodes.length; i++) {
+                if (condensedGraphNodes[i][JSON_INTERACTION_EVENT_CONTEXT] === newNode[JSON_INTERACTION_EVENT_CONTEXT]) {
+                    currentNode = condensedGraphNodes[i];
 
                     // Create a connection between the previous node and the new node
-                    if ("parentIds" in currentNode) {
-                        // TODO: How to represent multiple connections between nodes?
-                        if (currentNode["parentIds"].indexOf(previousNode["id"].toString()) < 0) {
-                            currentNode["parentIds"].push(previousNode["id"].toString());
-                        }
-                    } else {
-                        currentNode = {...currentNode, "parentIds": [previousNode["id"].toString()]};
-                    }
+                    // if ("parentIds" in currentNode) {
+                    //     // TODO: How to represent multiple connections between nodes?
+                    //     if (currentNode["parentIds"].indexOf(previousNode["id"].toString()) < 0) {
+                    //         currentNode["parentIds"].push(previousNode["id"].toString());
+                    //     }
+                    // } else {
+                    //     currentNode = {...currentNode, "parentIds": [previousNode["id"].toString()]};
+                    // }
+
+                    // Create the connection
+                    let connection = {
+                        "source": previousNode["id"],
+                        "target": currentNode["id"],
+                    };
+                    condensedGraphEdges.push(connection);
+
                     previousNode = currentNode;
                     break;
                 }
@@ -200,8 +209,13 @@ function testGraph(studentData) {
 
             // If not found add to the graph
             if (currentNode === null) {
-                newNode = {...newNode, "parentIds": [previousNode["id"].toString()]};
-                condensedGraph.push(newNode);
+                condensedGraphNodes.push(newNode);
+                // Create the connection
+                let connection = {
+                    "source": previousNode["id"],
+                    "target": newNode["id"],
+                };
+                condensedGraphEdges.push(connection);
                 previousNode = newNode;
                 current_id++;
             }
@@ -209,75 +223,147 @@ function testGraph(studentData) {
     });
 
     // TODO: Remove
-    console.log(condensedGraph);
+    console.log("Graph");
+    console.log(condensedGraphNodes);
+    console.log(condensedGraphEdges);
+
+    // Based on example on:
+    // https://www.d3-graph-gallery.com/graph/network_basic.html
 
     // Draw graph of interactions
-    const dag = d3.dagStratify()(condensedGraph);
-    const nodeRadius = 20;
-    const layout = d3
-        .sugiyama() // base layout
-        .nodeSize((node) => [(node ? 3.6 : 0.25) * nodeRadius, 3 * nodeRadius]); // set node size instead of constraining to fit
-    const { width, height } = layout(dag);
+    // set the dimensions and margins of the graph
+    const margin = {top: 10, right: 30, bottom: 30, left: 40},
+        width = 1200 - margin.left - margin.right,
+        height = 600 - margin.top - margin.bottom;
 
-    // --------------------------------
-    // Rendering
-    // --------------------------------
-    const svgSelection = d3.select(`#test-svg`);
-    svgSelection.attr("viewBox", [0, 0, height, width].join(" "));
-
-    // How to draw edges
-    const line = d3
-        .line()
-        .curve(d3.curveMonotoneX)
-        .x((d) => d.y)
-        .y((d) => d.x);
-
-    // Plot edges
-    svgSelection
+    // append the svg object to the body of the page
+    const svg = d3.select("#test-div")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
         .append("g")
-        .selectAll("path")
-        .data(dag.links())
-        .enter()
-        .append("path")
-        .attr("d", ({ points }) => line(points))
-        .attr("fill", "none")
-        .attr("stroke-width", 1)
-        .attr("stroke", "black");
+        .attr("transform",
+            `translate(${margin.left}, ${margin.top})`);
 
-    // Select nodes
-    const nodes = svgSelection
-        .append("g")
-        .selectAll("g")
-        .data(dag.descendants())
-        .enter()
-        .append("g")
-        .attr("transform", ({ x, y }) => `translate(${y}, ${x})`);
+    // Initialize the links
+    const link = svg
+        .selectAll("line")
+        .data(condensedGraphEdges)
+        .join("line")
+        .style("stroke", "#aaa");
 
-    // Plot node shapes
-    function drawNodeShape(nodeCategory) {
-        // Method for generating the symbol to display for the node
-        const symbolGenerator = d3.symbol().type(nodeCategory.shape).size(nodeCategory.size);
-        const pathData = symbolGenerator();
+    // Initialize the nodes
+    const node = svg
+        .selectAll("circle")
+        .data(condensedGraphNodes)
+        .join("circle")
+        .attr("r", 20)
+        .style("fill", "#69b3a2");
 
-        // Filters for components present in the event list for each category
-        nodes
-            .filter((d) => nodeCategory.eventList.includes(d.data[JSON_INTERACTION_COMPONENT]))
-            .append('path')
-            .attr('d', pathData)
-            .attr('fill', (d) => getNodeColor(d.data));
+    // Generate the labels
+    var label = svg.append("g")
+        .attr("class", "labels")
+        .selectAll("text")
+        .data(condensedGraphNodes)
+        .enter().append("text")
+        .attr("class", "label")
+        .text(function(d) { return d[JSON_INTERACTION_EVENT_CONTEXT]; });
+
+    // Let's list the force we wanna apply on the network
+    const simulation = d3.forceSimulation(condensedGraphNodes)                 // Force algorithm is applied to data.nodes
+        .force("link", d3.forceLink()                               // This force provides links between nodes
+            .id(function(d) { return d.id; })                     // This provide  the id of a node
+            .links(condensedGraphEdges)                                    // and this the list of links
+        )
+        .force("charge", d3.forceManyBody().strength(-1000))         // This adds repulsion between nodes. Play with the -400 for the repulsion strength
+        .force("center", d3.forceCenter(width / 2, height / 2))     // This force attracts nodes to the center of the svg area
+        .on("end", ticked);
+
+    // This function is run at each iteration of the force algorithm, updating the nodes position.
+    function ticked() {
+        link
+            .attr("x1", function(d) { return d.source.x; })
+            .attr("y1", function(d) { return d.source.y; })
+            .attr("x2", function(d) { return d.target.x; })
+            .attr("y2", function(d) { return d.target.y; });
+
+        node
+            .attr("cx", function (d) { return d.x+6; })
+            .attr("cy", function(d) { return d.y-6; });
+
+        label
+            .attr("x", function(d) { return d.x; })
+            .attr("y", function (d) { return d.y; })
+            .style("font-size", "20px").style("fill", "#000000");
     }
-    eventCategories.forEach(drawNodeShape);
 
-    // Add text to nodes
-    nodes
-        .append("text")
-        .text((d) => d.data.id)
-        .attr("font-size", "10")
-        .attr("font-weight", "bold")
-        .attr("font-family", "sans-serif")
-        .attr("text-anchor", "middle")
-        .attr("alignment-baseline", "middle")
-        .attr("fill", "white");
+    // Draw graph of interactions
+    // const dag = d3.dagStratify()(condensedGraphNodes);
+    // const nodeRadius = 20;
+    // const layout = d3
+    //     .sugiyama() // base layout
+    //     .nodeSize((node) => [(node ? 3.6 : 0.25) * nodeRadius, 3 * nodeRadius]); // set node size instead of constraining to fit
+    // const { width, height } = layout(dag);
+    //
+    // // --------------------------------
+    // // Rendering
+    // // --------------------------------
+    // const svgSelection = d3.select(`#test-svg`);
+    // svgSelection.attr("viewBox", [0, 0, height, width].join(" "));
+    //
+    // // How to draw edges
+    // const line = d3
+    //     .line()
+    //     .curve(d3.curveMonotoneX)
+    //     .x((d) => d.y)
+    //     .y((d) => d.x);
+    //
+    // // Plot edges
+    // svgSelection
+    //     .append("g")
+    //     .selectAll("path")
+    //     .data(dag.links())
+    //     .enter()
+    //     .append("path")
+    //     .attr("d", ({ points }) => line(points))
+    //     .attr("fill", "none")
+    //     .attr("stroke-width", 1)
+    //     .attr("stroke", "black");
+    //
+    // // Select nodes
+    // const nodes = svgSelection
+    //     .append("g")
+    //     .selectAll("g")
+    //     .data(dag.descendants())
+    //     .enter()
+    //     .append("g")
+    //     .attr("transform", ({ x, y }) => `translate(${y}, ${x})`);
+    //
+    // // Plot node shapes
+    // function drawNodeShape(nodeCategory) {
+    //     // Method for generating the symbol to display for the node
+    //     const symbolGenerator = d3.symbol().type(nodeCategory.shape).size(nodeCategory.size);
+    //     const pathData = symbolGenerator();
+    //
+    //     // Filters for components present in the event list for each category
+    //     nodes
+    //         .filter((d) => nodeCategory.eventList.includes(d.data[JSON_INTERACTION_COMPONENT]))
+    //         .append('path')
+    //         .attr('d', pathData)
+    //         .attr('fill', (d) => getNodeColor(d.data));
+    // }
+    // eventCategories.forEach(drawNodeShape);
+    //
+    // // Add text to nodes
+    // nodes
+    //     .append("text")
+    //     .text((d) => d.data.id)
+    //     .attr("font-size", "10")
+    //     .attr("font-weight", "bold")
+    //     .attr("font-family", "sans-serif")
+    //     .attr("text-anchor", "middle")
+    //     .attr("alignment-baseline", "middle")
+    //     .attr("fill", "white");
 }
 
 // Displays the contents of the json file on the UI
@@ -428,6 +514,7 @@ function displayStudentTrajectory(studentData, gradeList) {
     // Add the svg where the trajectory will be drawn
     const canvasId = `graph-canvas-${currentStudentsShown.length}`;
     const graphCanvas = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    graphCanvas.classList.add('student-trajectory-svg');
     graphCanvas.id = canvasId;
     trajectoryDiv.appendChild(graphCanvas);
 

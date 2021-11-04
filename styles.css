@@ -17,7 +17,7 @@ body {
 }
 
 /* Set height for trajectory viewing */
-svg {
+.student-trajectory-svg {
     height: 200px;
 }
 

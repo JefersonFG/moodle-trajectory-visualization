@@ -115,7 +115,7 @@ function processStudentData(studentData) {
 
     // Check if it is the first student being selected, if it is show the main headers
     if (currentStudentsShown.length === 0) {
-        let mainHeaders = document.getElementsByClassName('main-header');
+        let mainHeaders = document.getElementsByClassName('fixed-text');
         for (let i = 0; i < mainHeaders.length; i++) {
             mainHeaders[i].style.display = 'block';
         }

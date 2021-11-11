@@ -14,11 +14,23 @@
     <h2>Selecione o arquivo com as notas do aluno para gerar a visualização da sua trajetória no curso:</h2>
     <input type="file" id="file-input" />
 
-    <h2 class="main-header">Informações dos alunos</h2>
+    <h2 class="fixed-text">Informações dos alunos</h2>
     <div id="student-info-section-div"></div>
 
-    <h2 class="main-header"><b>Trajetória de aprendizado dos alunos</b></h2>
+    <h2 class="fixed-text"><b>Trajetória de aprendizado dos alunos</b></h2>
     <div id="student-trajectory-section-div"></div>
+    <div class="fixed-text">
+        <h2>Legenda</h2>
+        <h3>Formas</h3>
+        <p><b>Círculo:</b> interações do aluno com forums</p>
+        <p><b>Quadrado:</b> interações do aluno com tarefas</p>
+        <p><b>Triângulo:</b> interações do aluno com conteúdo da disciplina</p>
+        <p><b>Estrela:</b> interações do aluno com aulas remotas</p>
+        <p><b>Losângulo:</b> demais interações do aluno, como com o sistema do moodle</p>
+        <h3>Cores</h3>
+        <p><b>Roxo:</b> interações passivas do aluno, como visualizar conteúdos</p>
+        <p><b>Verde:</b> interações ativas do aluno, como postar conteúdo e tarefas</p>
+    </div>
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://unpkg.com/d3-dag@0.8.1"></script>

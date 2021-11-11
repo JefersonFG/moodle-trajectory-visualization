@@ -4,8 +4,8 @@ body {
     overflow-x: hidden;
 }
 
-/* Hide main headers by default, show them once the first student has been selected for viewing */
-.main-header {
+/* Hide fixed text such as main headers by default, show them once the first student has been selected for viewing */
+.fixed-text {
     display: none;
 }
 

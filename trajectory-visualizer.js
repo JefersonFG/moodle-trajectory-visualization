@@ -15,9 +15,6 @@ JSON_INTERACTION_EVENT_NAME = "Nome do evento";
 TOOLTIP_HORIZONTAL_OFFSET = -250;
 TOOLTIP_VERTICAL_OFFSET = -200;
 
-// Maximum number of students that the UI will show at the same time
-MAX_STUDENTS_VISIBLE = 3;
-
 // List of current shown students, to avoid duplicates on the UI and control number of simultaneous student trajectories being shown
 currentStudentsShown = [];
 
@@ -77,17 +74,16 @@ activeInteractionEvents = [
 ];
 
 // Reads the json file to load student data into memory and calls the function to process the data
-function readSingleFile(filePath) {
-    const file = filePath.target.files[0];
-    if (!file) {
-        return;
+function readInputFiles() {
+    const fileList = this.files;
+    for (let i = 0, numFiles = fileList.length; i < numFiles; i++) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            let content = e.target.result;
+            processStudentData(content);
+        };
+        reader.readAsText(fileList[i]);
     }
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        let content = e.target.result;
-        processStudentData(content);
-    };
-    reader.readAsText(file);
 }
 
 // Main entrypoint for processing user data once picked by the user on the UI
@@ -97,6 +93,7 @@ function processStudentData(studentData) {
 
     // Checks first if the data has a student name, if not then it is possible that the JSON file is invalid
     if (!(JSON_NAME in jsonData)) {
+        // TODO: Add filename to this error, to do so return this error and raise the alert on readInputFiles
         window.alert("Arquivo não contém o nome do estudante, confira se o arquivo é válido");
         return;
     }
@@ -104,12 +101,6 @@ function processStudentData(studentData) {
     // Check if a new student has been selected
     if (currentStudentsShown.includes(jsonData[JSON_NAME])) {
         console.log(`Student ${jsonData[JSON_NAME]} already shown on the UI`);
-        return;
-    }
-
-    // Check if the student limit has been reached
-    if (currentStudentsShown.length >= MAX_STUDENTS_VISIBLE) {
-        window.alert("Número máximo de estudantes exibidos simultâneamente atingido, atualize a página para exibir novas trajetórias");
         return;
     }
 
@@ -436,7 +427,7 @@ function getNodeText(node, gradeList) {
 
 // Sets the event listener for the user picking the json file with the user data
 document.getElementById('file-input')
-    .addEventListener('change', readSingleFile, false);
+    .addEventListener('change', readInputFiles, false);
 
 // Sets the event listener for the collapsible student info layout
 const coll = document.getElementsByClassName("student-info-button");
